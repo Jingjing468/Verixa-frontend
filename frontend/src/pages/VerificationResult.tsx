@@ -1,14 +1,10 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import PublicNavbar from '../components/common/PublicNavbar'
-import {
-  ShieldCheck,
-  ArrowLeft,
-  Link2,
-  Download,
-  ExternalLink,
-} from 'lucide-react'
-import type { VerificationResult as VerificationResultType } from '../types/verification'
+import { ArrowLeft, Link2, Download } from 'lucide-react'
+import type { VerificationResult as VerificationResultType, VerificationStatus } from '../types/verification'
+import type { PublicVerificationResponse } from '../api/types'
+import { apiRequest } from '../api/client'
 import VerificationStatusHero from '../components/verification/VerificationStatusHero'
 import PublicCertificateSummary from '../components/verification/PublicCertificateSummary'
 import PublicCertificatePreview from '../components/verification/PublicCertificatePreview'
@@ -18,69 +14,94 @@ import VerificationTrustInfo from '../components/verification/VerificationTrustI
 import VerificationNotFound from '../components/verification/VerificationNotFound'
 import StatusInfoBox from '../components/verification/StatusInfoBox'
 import CopyLinkToast from '../components/verification/CopyLinkToast'
+import VerificationLoading from '../components/verification/VerificationLoading'
 
-const mockData: Record<string, VerificationResultType> = {
-  'CERT-2026-0001248': {
-    id: 'CERT-2026-0001248',
-    recipientName: 'Lim Potkolbotey',
-    recipientEmail: 'lim.potkolbotey@kit.edu.kh',
-    program: 'Blockchain Development',
-    issuer: 'Kirirom Institute of Technology',
-    issueDate: 'May 23, 2026',
-    expirationDate: 'May 23, 2027',
-    status: 'valid',
+const toVerificationStatus = (status: PublicVerificationResponse['status']): VerificationStatus =>
+  status === 'not_found' ? 'notFound' : status
+
+const toDisplayDate = (value: string | null | undefined): string | undefined =>
+  value ? new Date(`${value}T00:00:00`).toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  }) : undefined
+
+const mapBackendVerification = (
+  data: PublicVerificationResponse
+): VerificationResultType | null => {
+  if (!data.success || !data.certificate) return null
+
+  return {
+    id: data.certificate.certificateId,
+    recipientName: data.certificate.recipientName,
+    program: data.certificate.courseName,
+    issuer: data.certificate.organizationName,
+    issueDate: toDisplayDate(data.certificate.issueDate) ?? data.certificate.issueDate,
+    expirationDate: toDisplayDate(data.certificate.expiryDate),
+    status: toVerificationStatus(data.status),
+    revokedDate: data.revocation?.revokedAt
+      ? new Date(data.revocation.revokedAt).toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      })
+      : undefined,
+    revocationReason: data.revocation?.reason,
     blockchain: {
-      network: 'Ethereum Sepolia',
-      transactionHash: '0x82a7c4f98b6d...91f3',
-      blockNumber: 7829143,
-      certificateHash: '0x7f3a9c2e8b4d...82ac',
-      hashMatched: true,
+      network: data.blockchain?.network ?? 'Not anchored yet',
+      transactionHash: data.blockchain?.transactionHash ?? 'Not available',
+      blockNumber: 0,
+      certificateHash: data.integrity?.databaseHashMatched ? 'Database hash matched' : 'Hash mismatch',
+      hashMatched: Boolean(data.integrity?.databaseHashMatched),
     },
-  },
-  'CERT-2026-EXPIRED': {
-    id: 'CERT-2026-EXPIRED',
-    recipientName: 'Sophea Chan',
-    recipientEmail: 'sophea.chan@globaltech.edu',
-    program: 'Web Development Fundamentals',
-    issuer: 'Global Tech Academy',
-    issueDate: 'January 15, 2025',
-    expirationDate: 'January 15, 2026',
-    status: 'expired',
-    blockchain: {
-      network: 'Ethereum Sepolia',
-      transactionHash: '0x3b1c4a8e9d2f...4f7a',
-      blockNumber: 3102845,
-      certificateHash: '0xc7e4b2f1a9d3...1a8f',
-      hashMatched: true,
-    },
-  },
-  'CERT-2026-REVOKED': {
-    id: 'CERT-2026-REVOKED',
-    recipientName: 'Dara Mey',
-    recipientEmail: 'dara.mey@phnomtech.edu',
-    program: 'Data Science Essentials',
-    issuer: 'Phnom Tech Institute',
-    issueDate: 'March 8, 2026',
-    status: 'revoked',
-    revokedDate: 'June 12, 2026',
-    revocationReason: 'Incorrect certificate information',
-    blockchain: {
-      network: 'Ethereum Sepolia',
-      transactionHash: '0x9d4e2c6b7a1f...2c6b',
-      blockNumber: 4501273,
-      certificateHash: '0xf1a9d3e7c5b2...7c5e',
-      hashMatched: true,
-    },
-  },
+  }
 }
 
 function VerificationResult() {
   const { id } = useParams<{ id: string }>()
-  const cert = id ? mockData[id] : undefined
-  const status = cert ? cert.status : 'notFound'
-
+  const [cert, setCert] = useState<VerificationResultType | null>(null)
+  const [status, setStatus] = useState<VerificationStatus>('notFound')
+  const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState({ visible: false, message: '' })
   const toastTimeout = useRef<ReturnType<typeof setTimeout>>(null)
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    const verifyCertificate = async () => {
+      if (!id) {
+        setStatus('notFound')
+        setCert(null)
+        setLoading(false)
+        return
+      }
+
+      setLoading(true)
+
+      try {
+        const data = await apiRequest<PublicVerificationResponse>(
+          `/verify/${encodeURIComponent(id)}`
+        )
+        const mappedCertificate = mapBackendVerification(data)
+
+        setCert(mappedCertificate)
+        setStatus(mappedCertificate ? mappedCertificate.status : toVerificationStatus(data.status))
+      } catch {
+        if (!controller.signal.aborted) {
+          setCert(null)
+          setStatus('notFound')
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false)
+        }
+      }
+    }
+
+    verifyCertificate()
+
+    return () => controller.abort()
+  }, [id])
 
   useEffect(() => {
     return () => {
@@ -111,39 +132,30 @@ function VerificationResult() {
       <PublicNavbar />
 
       <div className="verify-container">
-        {/* Back link */}
         <Link to="/verify" className="verify-result-back">
           <ArrowLeft size={15} />
           Verify another certificate
         </Link>
 
-        {status === 'notFound' ? (
+        {loading ? (
+          <VerificationLoading />
+        ) : status === 'notFound' ? (
           <VerificationNotFound />
         ) : (
           <div className="vr-page">
-            {/* Status Hero */}
             <VerificationStatusHero status={status} />
-
-            {/* Status info box */}
             {cert && <StatusInfoBox status={status} cert={cert} />}
-
-            {/* Main 2-column layout */}
             {cert && (
               <div className="vr-layout">
-                {/* Left column */}
                 <div className="vr-main-col">
                   <PublicCertificateSummary cert={cert} onCopy={handleCopy} />
                   <BlockchainProofCard cert={cert} />
                 </div>
-
-                {/* Right column */}
                 <div className="vr-side-col">
                   <PublicCertificatePreview cert={cert} />
                 </div>
               </div>
             )}
-
-            {/* Timeline */}
             {cert && (
               <VerificationTimeline
                 status={status}
@@ -152,8 +164,6 @@ function VerificationResult() {
                 revokedDate={cert.revokedDate}
               />
             )}
-
-            {/* Actions */}
             <div className="vr-actions">
               <Link to="/verify" className="vr-action-btn primary">
                 <ArrowLeft size={14} />
@@ -163,29 +173,22 @@ function VerificationResult() {
                 <Link2 size={14} />
                 Copy Verification Link
               </button>
-              <button className="vr-action-btn secondary" onClick={() => showToast('Download started (mock)')}>
+              <button className="vr-action-btn secondary" onClick={() => showToast('Download is available from the admin certificate page')}>
                 <Download size={14} />
                 Download Certificate
               </button>
             </div>
-
-            {/* Trust info */}
             <VerificationTrustInfo />
           </div>
         )}
       </div>
 
-      {/* Footer */}
       <footer className="site-footer">
-        <div
-          className="footer-bottom"
-          style={{ maxWidth: 1280, margin: '0 auto', padding: '16px 32px' }}
-        >
+        <div className="footer-bottom" style={{ maxWidth: 1280, margin: '0 auto', padding: '16px 32px' }}>
           © 2026 Verixa. All rights reserved.
         </div>
       </footer>
 
-      {/* Toast */}
       <CopyLinkToast visible={toast.visible} message={toast.message} />
     </main>
   )
