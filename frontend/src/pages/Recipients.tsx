@@ -61,6 +61,17 @@ export default function Recipients() {
       })
   }, [recipients, search, filter, sort])
 
+  const recipientsThisMonth = recipients.filter((recipient) => {
+    const createdAt = new Date(recipient.lastIssued)
+    const now = new Date()
+    return createdAt.getMonth() === now.getMonth() && createdAt.getFullYear() === now.getFullYear()
+  }).length
+
+  const activeCertificates = recipients.reduce(
+    (total, recipient) => total + recipient.validCertificates,
+    0
+  )
+
   const clear = () => { setSearch(''); setFilter('all'); setSort('newest') }
 
   return (
@@ -78,7 +89,11 @@ export default function Recipients() {
           </button>
         </header>
 
-        <RecipientStats />
+        <RecipientStats
+          totalRecipients={recipients.length}
+          activeCertificates={activeCertificates}
+          recipientsThisMonth={recipientsThisMonth}
+        />
         {error && <span className="field-error">{error}</span>}
 
         <RecipientFilters
