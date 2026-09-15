@@ -5,17 +5,45 @@ import RecipientStats from '../components/recipients/RecipientStats'
 import RecipientFilters from '../components/recipients/RecipientFilters'
 import RecipientEmptyState from '../components/recipients/RecipientEmptyState'
 import RecipientDetailDrawer from '../components/recipients/RecipientDetailDrawer'
-import type { Recipient, RecipientFilter, RecipientSort } from '../types/recipient'
+import type { Recipient, RecipientCertificate, RecipientFilter, RecipientSort } from '../types/recipient'
 import { apiRequest } from '../api/client'
-import type { RecipientsResponse } from '../api/types'
+import type { CertificateSummary, CertificatesResponse, RecipientsResponse } from '../api/types'
 
 function initials(name: string) {
   return name.split(' ').map((n) => n[0]).join('').slice(0, 2)
 }
 
+function formatDate(value: string | null) {
+  if (!value) return 'Not issued yet'
+
+  return new Intl.DateTimeFormat('en', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(new Date(value))
+}
+
+async function loadAllCertificates() {
+  const firstPage = await apiRequest<CertificatesResponse>('/certificates?limit=100&page=1', { auth: true })
+  const remainingPages = Array.from(
+    { length: Math.max(firstPage.pagination.totalPages - 1, 0) },
+    (_, index) => index + 2
+  )
+
+  const remainingResponses = await Promise.all(
+    remainingPages.map((page) =>
+      apiRequest<CertificatesResponse>(`/certificates?limit=100&page=${page}`, { auth: true })
+    )
+  )
+
+  return [firstPage, ...remainingResponses].flatMap((response) => response.data)
+}
+
 export default function Recipients() {
   const [recipients, setRecipients] = useState<Recipient[]>([])
+  const [certificates, setCertificates] = useState<CertificateSummary[]>([])
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<RecipientFilter>('all')
   const [sort, setSort] = useState<RecipientSort>('newest')
@@ -23,23 +51,29 @@ export default function Recipients() {
   const [actionMenu, setActionMenu] = useState<string | null>(null)
 
   useEffect(() => {
-    apiRequest<RecipientsResponse>('/recipients', { auth: true })
-      .then((response) => {
-        setRecipients(response.recipients.map((recipient) => ({
+    Promise.all([
+      apiRequest<RecipientsResponse>('/recipients', { auth: true }),
+      loadAllCertificates(),
+    ])
+      .then(([recipientResponse, certificateResponse]) => {
+        setCertificates(certificateResponse)
+        setRecipients(recipientResponse.recipients.map((recipient) => ({
           id: recipient.id,
           name: recipient.fullName,
           email: recipient.email,
           organization: recipient.organizationId,
-          totalCertificates: 0,
-          validCertificates: 0,
-          expiredCertificates: 0,
-          revokedCertificates: 0,
-          lastIssued: new Date(recipient.createdAt).toLocaleDateString(),
+          totalCertificates: recipient.totalCertificates,
+          validCertificates: recipient.validCertificates,
+          expiredCertificates: recipient.expiredCertificates,
+          revokedCertificates: recipient.revokedCertificates,
+          lastIssued: formatDate(recipient.lastIssuedAt),
+          createdAt: recipient.createdAt,
         })))
       })
       .catch((requestError) => {
         setError(requestError instanceof Error ? requestError.message : 'Could not load recipients')
       })
+      .finally(() => setLoading(false))
   }, [])
 
   const filtered = useMemo(() => {
@@ -57,12 +91,12 @@ export default function Recipients() {
       .sort((a, b) => {
         if (sort === 'name') return a.name.localeCompare(b.name)
         if (sort === 'certificates') return b.totalCertificates - a.totalCertificates
-        return a.id.localeCompare(b.id)
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       })
   }, [recipients, search, filter, sort])
 
   const recipientsThisMonth = recipients.filter((recipient) => {
-    const createdAt = new Date(recipient.lastIssued)
+    const createdAt = new Date(recipient.createdAt)
     const now = new Date()
     return createdAt.getMonth() === now.getMonth() && createdAt.getFullYear() === now.getFullYear()
   }).length
@@ -71,6 +105,22 @@ export default function Recipients() {
     (total, recipient) => total + recipient.validCertificates,
     0
   )
+
+  const selectedCertificates: RecipientCertificate[] = useMemo(() => {
+    if (!selected) return []
+
+    return certificates
+      .filter((certificate) =>
+        certificate.recipient.id === selected.id || certificate.recipient.email === selected.email
+      )
+      .slice(0, 5)
+      .map((certificate) => ({
+        id: certificate.certificateId,
+        course: certificate.courseName,
+        status: certificate.status,
+        issueDate: formatDate(certificate.issueDate),
+      }))
+  }, [certificates, selected])
 
   const clear = () => { setSearch(''); setFilter('all'); setSort('newest') }
 
@@ -105,7 +155,14 @@ export default function Recipients() {
 
         {/* Table */}
         <section className="recipient-table-card">
-          {filtered.length > 0 ? (
+          {loading ? (
+            <div className="recipient-table-wrap">
+              <div className="recipient-empty">
+                <h3>Loading recipients...</h3>
+                <p>Fetching live records from the backend.</p>
+              </div>
+            </div>
+          ) : filtered.length > 0 ? (
             <div className="recipient-table-wrap">
               <table className="recipient-table">
                 <thead>
@@ -171,7 +228,7 @@ export default function Recipients() {
       {selected && (
         <RecipientDetailDrawer
           recipient={selected}
-          certificates={[]}
+          certificates={selectedCertificates}
           onClose={() => setSelected(null)}
         />
       )}

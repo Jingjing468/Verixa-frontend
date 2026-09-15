@@ -233,6 +233,9 @@
 .activity-feed-item div{display:grid;gap:2px}
 .activity-feed-item b{color:#46536a;font-size:10px}
 .activity-feed-item small{color:#939dac;font-size:9px}
+.report-empty-state{display:grid;align-content:center;justify-items:center;gap:5px;min-height:120px;width:100%;padding:20px;color:#8b96a8;text-align:center;background:#f8faff;border:1px solid #edf0f5;border-radius:10px;font-size:10px}
+.report-empty-state b{color:#46536a;font-size:11px}
+.report-empty-state span{color:#8b96a8;font-size:10px}
 
 /* Export modal */
 .export-modal{position:relative;width:min(420px,90vw);padding:32px;text-align:center;background:#fff;border-radius:19px;box-shadow:0 22px 55px rgba(18,30,54,.25);animation:modal-in .3s both}
@@ -338,6 +341,7 @@
 .drawer-stat.revoked b{color:#db5569}
 .drawer-certificates{margin-bottom:20px}
 .drawer-certificates h3{margin:0 0 10px;color:#3c4a60;font-size:12px}
+.drawer-empty-text{margin:0;padding:12px;color:#8b96a8;background:#f8faff;border:1px solid #edf0f5;border-radius:8px;font-size:10px}
 .drawer-cert-row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid #edf0f5;border-radius:9px;margin-bottom:8px}
 .drawer-cert-row div{display:grid;gap:2px}
 .drawer-cert-row b{color:#46536a;font-size:10px}
