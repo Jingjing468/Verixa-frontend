@@ -13,9 +13,15 @@ export type RecentCertificateRow = {
   id: string;
   certificate_id: string;
   recipient_name: string;
+  recipient_email: string;
   course_name: string;
   status: "valid" | "expired" | "revoked";
   created_at: Date;
+};
+
+export type DashboardTrendRow = {
+  date: string;
+  count: string;
 };
 
 export type ReportSummaryRow = DashboardStatsRow;
@@ -97,6 +103,7 @@ export const getRecentCertificates = async (
         id,
         certificate_id,
         recipient_name,
+        recipient_email,
         course_name,
         ${effectiveStatusSql} AS status,
         created_at
@@ -106,6 +113,32 @@ export const getRecentCertificates = async (
       LIMIT $2
     `,
     [organizationId, limit]
+  );
+
+  return result.rows;
+};
+
+export const getDashboardIssuanceTrend = async (
+  organizationId: string
+): Promise<DashboardTrendRow[]> => {
+  const result = await pool.query<DashboardTrendRow>(
+    `
+      WITH days AS (
+        SELECT generate_series(
+          CURRENT_DATE - INTERVAL '6 days',
+          CURRENT_DATE,
+          INTERVAL '1 day'
+        )::date AS date
+      )
+      SELECT days.date::text AS date, COUNT(c.id)::text AS count
+      FROM days
+      LEFT JOIN certificates c
+        ON c.organization_id = $1
+        AND c.created_at::date = days.date
+      GROUP BY days.date
+      ORDER BY days.date ASC
+    `,
+    [organizationId]
   );
 
   return result.rows;

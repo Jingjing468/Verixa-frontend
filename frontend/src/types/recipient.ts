@@ -8,6 +8,7 @@ export interface Recipient {
   expiredCertificates: number
   revokedCertificates: number
   lastIssued: string
+  createdAt: string
 }
 
 export interface RecipientCertificate {

@@ -1,52 +1,83 @@
-import { Download, Ellipsis, Eye, Mail, Plus, Send } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { Ellipsis, Eye, Mail, Plus } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 import DashboardLayout from '../layouts/DashboardLayout'
 import RecipientStats from '../components/recipients/RecipientStats'
 import RecipientFilters from '../components/recipients/RecipientFilters'
 import RecipientEmptyState from '../components/recipients/RecipientEmptyState'
 import RecipientDetailDrawer from '../components/recipients/RecipientDetailDrawer'
 import type { Recipient, RecipientCertificate, RecipientFilter, RecipientSort } from '../types/recipient'
-
-const mockRecipients: Recipient[] = [
-  { id: 'REC-001', name: 'Lim Potkolbotey', email: 'lim@example.com', organization: 'Kirirom Institute of Technology', totalCertificates: 5, validCertificates: 4, expiredCertificates: 1, revokedCertificates: 0, lastIssued: 'May 23, 2026' },
-  { id: 'REC-002', name: 'Yean Sreymom', email: 'sreymom@example.com', organization: 'Kirirom Institute of Technology', totalCertificates: 3, validCertificates: 3, expiredCertificates: 0, revokedCertificates: 0, lastIssued: 'May 22, 2026' },
-  { id: 'REC-003', name: 'Dara Vimean', email: 'dara@example.com', organization: 'Kirirom Institute of Technology', totalCertificates: 2, validCertificates: 1, expiredCertificates: 1, revokedCertificates: 0, lastIssued: 'May 21, 2026' },
-  { id: 'REC-004', name: 'Sokha Ngin', email: 'sokha@example.com', organization: 'Kirirom Institute of Technology', totalCertificates: 4, validCertificates: 2, expiredCertificates: 0, revokedCertificates: 2, lastIssued: 'May 19, 2026' },
-  { id: 'REC-005', name: 'Vannak Keo', email: 'vannak@example.com', organization: 'Kirirom Institute of Technology', totalCertificates: 3, validCertificates: 2, expiredCertificates: 1, revokedCertificates: 0, lastIssued: 'May 18, 2026' },
-  { id: 'REC-006', name: 'Sophy Chan', email: 'sophy@example.com', organization: 'Kirirom Institute of Technology', totalCertificates: 2, validCertificates: 2, expiredCertificates: 0, revokedCertificates: 0, lastIssued: 'May 16, 2026' },
-  { id: 'REC-007', name: 'Bora Khem', email: 'bora@example.com', organization: 'Kirirom Institute of Technology', totalCertificates: 1, validCertificates: 0, expiredCertificates: 1, revokedCertificates: 0, lastIssued: 'May 14, 2026' },
-  { id: 'REC-008', name: 'Chantrea Oum', email: 'chantrea@example.com', organization: 'Kirirom Institute of Technology', totalCertificates: 2, validCertificates: 2, expiredCertificates: 0, revokedCertificates: 0, lastIssued: 'May 12, 2026' },
-]
-
-const mockCerts: Record<string, RecipientCertificate[]> = {
-  'REC-001': [
-    { id: 'CERT-2026-0001248', course: 'Blockchain Development', status: 'valid', issueDate: 'May 23, 2026' },
-    { id: 'CERT-2026-0001220', course: 'Smart Contract Basics', status: 'valid', issueDate: 'Apr 10, 2026' },
-    { id: 'CERT-2026-0001180', course: 'Web3 Fundamentals', status: 'expired', issueDate: 'Jan 15, 2026' },
-  ],
-  'REC-002': [
-    { id: 'CERT-2026-0001247', course: 'Smart Contract Basics', status: 'valid', issueDate: 'May 22, 2026' },
-    { id: 'CERT-2026-0001200', course: 'Blockchain Development', status: 'valid', issueDate: 'Mar 5, 2026' },
-  ],
-  'REC-004': [
-    { id: 'CERT-2026-0001245', course: 'Decentralized Applications', status: 'revoked', issueDate: 'May 19, 2026' },
-    { id: 'CERT-2026-0001190', course: 'Ethereum Development', status: 'valid', issueDate: 'Feb 28, 2026' },
-  ],
-}
+import { apiRequest } from '../api/client'
+import type { CertificateSummary, CertificatesResponse, RecipientsResponse } from '../api/types'
 
 function initials(name: string) {
   return name.split(' ').map((n) => n[0]).join('').slice(0, 2)
 }
 
+function formatDate(value: string | null) {
+  if (!value) return 'Not issued yet'
+
+  return new Intl.DateTimeFormat('en', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(new Date(value))
+}
+
+async function loadAllCertificates() {
+  const firstPage = await apiRequest<CertificatesResponse>('/certificates?limit=100&page=1', { auth: true })
+  const remainingPages = Array.from(
+    { length: Math.max(firstPage.pagination.totalPages - 1, 0) },
+    (_, index) => index + 2
+  )
+
+  const remainingResponses = await Promise.all(
+    remainingPages.map((page) =>
+      apiRequest<CertificatesResponse>(`/certificates?limit=100&page=${page}`, { auth: true })
+    )
+  )
+
+  return [firstPage, ...remainingResponses].flatMap((response) => response.data)
+}
+
 export default function Recipients() {
+  const [recipients, setRecipients] = useState<Recipient[]>([])
+  const [certificates, setCertificates] = useState<CertificateSummary[]>([])
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<RecipientFilter>('all')
   const [sort, setSort] = useState<RecipientSort>('newest')
   const [selected, setSelected] = useState<Recipient | null>(null)
   const [actionMenu, setActionMenu] = useState<string | null>(null)
 
+  useEffect(() => {
+    Promise.all([
+      apiRequest<RecipientsResponse>('/recipients', { auth: true }),
+      loadAllCertificates(),
+    ])
+      .then(([recipientResponse, certificateResponse]) => {
+        setCertificates(certificateResponse)
+        setRecipients(recipientResponse.recipients.map((recipient) => ({
+          id: recipient.id,
+          name: recipient.fullName,
+          email: recipient.email,
+          organization: recipient.organizationId,
+          totalCertificates: recipient.totalCertificates,
+          validCertificates: recipient.validCertificates,
+          expiredCertificates: recipient.expiredCertificates,
+          revokedCertificates: recipient.revokedCertificates,
+          lastIssued: formatDate(recipient.lastIssuedAt),
+          createdAt: recipient.createdAt,
+        })))
+      })
+      .catch((requestError) => {
+        setError(requestError instanceof Error ? requestError.message : 'Could not load recipients')
+      })
+      .finally(() => setLoading(false))
+  }, [])
+
   const filtered = useMemo(() => {
-    return mockRecipients
+    return recipients
       .filter((r) => {
         const q = search.toLowerCase()
         const matchSearch = !q || r.name.toLowerCase().includes(q) || r.email.toLowerCase().includes(q)
@@ -60,9 +91,36 @@ export default function Recipients() {
       .sort((a, b) => {
         if (sort === 'name') return a.name.localeCompare(b.name)
         if (sort === 'certificates') return b.totalCertificates - a.totalCertificates
-        return a.id.localeCompare(b.id)
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       })
-  }, [search, filter, sort])
+  }, [recipients, search, filter, sort])
+
+  const recipientsThisMonth = recipients.filter((recipient) => {
+    const createdAt = new Date(recipient.createdAt)
+    const now = new Date()
+    return createdAt.getMonth() === now.getMonth() && createdAt.getFullYear() === now.getFullYear()
+  }).length
+
+  const activeCertificates = recipients.reduce(
+    (total, recipient) => total + recipient.validCertificates,
+    0
+  )
+
+  const selectedCertificates: RecipientCertificate[] = useMemo(() => {
+    if (!selected) return []
+
+    return certificates
+      .filter((certificate) =>
+        certificate.recipient.id === selected.id || certificate.recipient.email === selected.email
+      )
+      .slice(0, 5)
+      .map((certificate) => ({
+        id: certificate.certificateId,
+        course: certificate.courseName,
+        status: certificate.status,
+        issueDate: formatDate(certificate.issueDate),
+      }))
+  }, [certificates, selected])
 
   const clear = () => { setSearch(''); setFilter('all'); setSort('newest') }
 
@@ -81,7 +139,12 @@ export default function Recipients() {
           </button>
         </header>
 
-        <RecipientStats />
+        <RecipientStats
+          totalRecipients={recipients.length}
+          activeCertificates={activeCertificates}
+          recipientsThisMonth={recipientsThisMonth}
+        />
+        {error && <span className="field-error">{error}</span>}
 
         <RecipientFilters
           search={search} onSearchChange={setSearch}
@@ -92,7 +155,14 @@ export default function Recipients() {
 
         {/* Table */}
         <section className="recipient-table-card">
-          {filtered.length > 0 ? (
+          {loading ? (
+            <div className="recipient-table-wrap">
+              <div className="recipient-empty">
+                <h3>Loading recipients...</h3>
+                <p>Fetching live records from the backend.</p>
+              </div>
+            </div>
+          ) : filtered.length > 0 ? (
             <div className="recipient-table-wrap">
               <table className="recipient-table">
                 <thead>
@@ -158,7 +228,7 @@ export default function Recipients() {
       {selected && (
         <RecipientDetailDrawer
           recipient={selected}
-          certificates={mockCerts[selected.id] || []}
+          certificates={selectedCertificates}
           onClose={() => setSelected(null)}
         />
       )}
