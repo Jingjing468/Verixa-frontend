@@ -6,9 +6,10 @@ import type { ApiOrganization, ApiUser } from '../../api/types'
 
 interface DashboardHeaderProps {
   onMenu: () => void
+  unreadNotifications: number
 }
 
-function DashboardHeader({ onMenu }: DashboardHeaderProps) {
+function DashboardHeader({ onMenu, unreadNotifications }: DashboardHeaderProps) {
   const navigate = useNavigate()
   const [profileOpen, setProfileOpen] = useState(false)
   const [user, setUser] = useState<ApiUser | null>(null)
@@ -51,9 +52,13 @@ function DashboardHeader({ onMenu }: DashboardHeaderProps) {
         </label>
       </div>
       <div className="header-right">
-        <Link to="/notifications" className="notification-button" aria-label="Notifications">
+        <Link
+          to="/notifications"
+          className="notification-button"
+          aria-label={`${unreadNotifications} unread notifications`}
+        >
           <Bell size={20} />
-          <i />
+          {unreadNotifications > 0 && <i />}
         </Link>
         <div className="header-profile-wrap">
           <button className="profile-button" onClick={() => setProfileOpen(!profileOpen)}>

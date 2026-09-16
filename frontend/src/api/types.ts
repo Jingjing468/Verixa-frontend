@@ -27,6 +27,11 @@ export type RegisterResponse = {
 
 export type DashboardResponse = {
   success: true
+  user: {
+    fullName: string
+    email: string
+    role: 'admin' | 'issuer' | 'viewer'
+  }
   stats: {
     totalCertificates: number
     validCertificates: number
@@ -39,9 +44,14 @@ export type DashboardResponse = {
     id: string
     certificateId: string
     recipientName: string
+    recipientEmail: string
     courseName: string
     status: 'valid' | 'expired' | 'revoked'
     createdAt: string
+  }>
+  issuanceTrend: Array<{
+    date: string
+    count: number
   }>
 }
 

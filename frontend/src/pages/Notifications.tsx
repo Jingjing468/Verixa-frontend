@@ -58,6 +58,10 @@ const toNotificationItem = (notification: NotificationSummary): NotificationItem
   unread: !notification.isRead,
 })
 
+const refreshNotificationBadges = () => {
+  window.dispatchEvent(new Event('verixa:notifications-updated'))
+}
+
 export default function Notifications() {
   const navigate = useNavigate()
   const [notifications, setNotifications] = useState<NotificationItem[]>([])
@@ -98,6 +102,7 @@ export default function Notifications() {
     apiRequest('/notifications/read-all', { method: 'PATCH', auth: true })
       .then(() => {
         setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })))
+        refreshNotificationBadges()
         showToast('All notifications marked as read.')
       })
       .catch((requestError) => showToast(requestError instanceof Error ? requestError.message : 'Could not update notifications'))
@@ -107,6 +112,7 @@ export default function Notifications() {
     apiRequest(`/notifications/${id}/read`, { method: 'PATCH', auth: true })
       .then(() => {
         setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, unread: false } : n))
+        refreshNotificationBadges()
         setActiveMenu(null)
       })
       .catch((requestError) => showToast(requestError instanceof Error ? requestError.message : 'Could not update notification'))

@@ -9,6 +9,23 @@ import StatusChart from '../components/dashboard/StatusChart'
 import { apiRequest } from '../api/client'
 import type { DashboardResponse } from '../api/types'
 
+function buildIssuedChartData(trend: DashboardResponse['issuanceTrend'] = []) {
+  const formatter = new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric' })
+  const points = trend.length > 0 ? trend : Array.from({ length: 7 }, (_, index) => {
+    const date = new Date()
+    date.setDate(date.getDate() - (6 - index))
+    return {
+      date: date.toISOString().slice(0, 10),
+      count: 0,
+    }
+  })
+
+  return points.map((point) => ({
+    day: formatter.format(new Date(`${point.date}T00:00:00`)),
+    value: point.count,
+  }))
+}
+
 function Dashboard() {
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null)
   const [error, setError] = useState('')
@@ -22,6 +39,9 @@ function Dashboard() {
   }, [])
 
   const stats = dashboard?.stats
+  const recentCertificates = dashboard?.recentCertificateActivity ?? []
+  const issuedChartData = buildIssuedChartData(dashboard?.issuanceTrend)
+  const firstName = dashboard?.user.fullName.split(' ')[0] ?? 'there'
 
   return (
     <DashboardLayout>
@@ -29,7 +49,7 @@ function Dashboard() {
         <section className="dashboard-welcome dashboard-enter">
           <div>
             <p>Organization overview</p>
-            <h1>Welcome back, Admin!</h1>
+            <h1>Welcome back, {firstName}!</h1>
             <span>Here's what's happening with your certificates today.</span>
           </div>
           <button className="date-button">
@@ -44,11 +64,16 @@ function Dashboard() {
           <StatCard icon={ShieldAlert} label="Revoked Certificates" value={stats?.revokedCertificates ?? 0} detail={`${stats?.totalRecipients ?? 0} recipients`} tone="red" delay={290} />
         </section>
         <section className="dashboard-charts">
-          <StatusChart />
-          <IssuedChart />
+          <StatusChart
+            total={stats?.totalCertificates ?? 0}
+            valid={stats?.validCertificates ?? 0}
+            expired={stats?.expiredCertificates ?? 0}
+            revoked={stats?.revokedCertificates ?? 0}
+          />
+          <IssuedChart data={issuedChartData} />
         </section>
         <QuickActions />
-        <RecentCertificates />
+        <RecentCertificates certificates={recentCertificates} />
         <footer className="dashboard-footer">
           <span>© 2026 Verixa. All rights reserved.</span>
           <span>
