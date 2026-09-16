@@ -1,14 +1,44 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Bell, ChevronDown, LogOut, Menu, Search, Settings, UserRound } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
+import { apiRequest, clearAuthToken } from '../../api/client'
+import type { ApiOrganization, ApiUser } from '../../api/types'
 
 interface DashboardHeaderProps {
   onMenu: () => void
+  unreadNotifications: number
 }
 
-function DashboardHeader({ onMenu }: DashboardHeaderProps) {
+function DashboardHeader({ onMenu, unreadNotifications }: DashboardHeaderProps) {
   const navigate = useNavigate()
   const [profileOpen, setProfileOpen] = useState(false)
+  const [user, setUser] = useState<ApiUser | null>(null)
+  const [organization, setOrganization] = useState<ApiOrganization | null>(null)
+
+  useEffect(() => {
+    apiRequest<{ success: true; user: ApiUser; organization: ApiOrganization }>('/auth/me', { auth: true })
+      .then((response) => {
+        setUser(response.user)
+        setOrganization(response.organization)
+      })
+      .catch(() => {
+        setUser(null)
+        setOrganization(null)
+      })
+  }, [])
+
+  const initials = (user?.fullName ?? 'Admin User')
+    .split(' ')
+    .map((part) => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase()
+
+  const handleLogout = () => {
+    clearAuthToken()
+    setProfileOpen(false)
+    navigate('/login')
+  }
 
   return (
     <header className="dashboard-header">
@@ -22,16 +52,20 @@ function DashboardHeader({ onMenu }: DashboardHeaderProps) {
         </label>
       </div>
       <div className="header-right">
-        <Link to="/notifications" className="notification-button" aria-label="Notifications">
+        <Link
+          to="/notifications"
+          className="notification-button"
+          aria-label={`${unreadNotifications} unread notifications`}
+        >
           <Bell size={20} />
-          <i />
+          {unreadNotifications > 0 && <i />}
         </Link>
         <div className="header-profile-wrap">
           <button className="profile-button" onClick={() => setProfileOpen(!profileOpen)}>
-            <span>AU</span>
+            <span>{initials}</span>
             <div>
-              <b>Admin User</b>
-              <small>Organization Admin</small>
+              <b>{user?.fullName ?? 'Admin User'}</b>
+              <small>{organization?.name ?? 'Organization Admin'}</small>
             </div>
             <ChevronDown size={16} />
           </button>
@@ -43,7 +77,7 @@ function DashboardHeader({ onMenu }: DashboardHeaderProps) {
               <Link to="/settings" onClick={() => setProfileOpen(false)}>
                 <Settings size={14} /> Settings
               </Link>
-              <button onClick={() => { setProfileOpen(false); navigate('/login') }}>
+              <button onClick={handleLogout}>
                 <LogOut size={14} /> Log Out
               </button>
             </div>
