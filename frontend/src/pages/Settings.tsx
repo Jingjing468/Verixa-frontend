@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { CheckCircle2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import DashboardLayout from '../layouts/DashboardLayout'
@@ -19,8 +19,6 @@ import type {
   NotificationSettings as NotificationSettingsType,
   Preferences,
 } from '../types/settings'
-import { apiRequest } from '../api/client'
-import type { ProfileResponse } from '../api/types'
 
 const initialOrg: OrganizationSettings = {
   name: 'Kirirom Institute of Technology',
@@ -90,56 +88,16 @@ function Settings() {
 
   const [hasChanges, setHasChanges] = useState(false)
 
-  useEffect(() => {
-    apiRequest<ProfileResponse>('/settings', { auth: true })
-      .then((response) => {
-        setOrg((current) => ({
-          ...current,
-          name: response.profile.organization.name,
-          email: response.profile.organization.email,
-          logoUrl: response.profile.organization.logoUrl,
-        }))
-        setBranding((current) => ({
-          ...current,
-          displayName: response.profile.organization.name,
-        }))
-        setProfile((current) => ({
-          ...current,
-          fullName: response.profile.fullName,
-          email: response.profile.email,
-          role: response.profile.role === 'admin' ? 'Organization Administrator' : response.profile.role,
-        }))
-      })
-      .catch(() => undefined)
-  }, [])
-
   const markChanged = useCallback(() => {
     if (!hasChanges) setHasChanges(true)
   }, [hasChanges])
 
   const handleSave = useCallback(() => {
-    const saveRequest =
-      activeSection === 'organization'
-        ? apiRequest('/settings', {
-          method: 'PUT',
-          auth: true,
-          body: { organizationName: org.name, logoUrl: org.logoUrl },
-        })
-        : activeSection === 'profile'
-          ? apiRequest('/profile', {
-            method: 'PUT',
-            auth: true,
-            body: { fullName: profile.fullName },
-          })
-          : Promise.resolve()
-
-    saveRequest.then(() => {
-      setHasChanges(false)
-      if (toastTimeout.current) clearTimeout(toastTimeout.current)
-      setShowToast(true)
-      toastTimeout.current = setTimeout(() => setShowToast(false), 3000)
-    })
-  }, [activeSection, org.name, org.logoUrl, profile.fullName])
+    setHasChanges(false)
+    if (toastTimeout.current) clearTimeout(toastTimeout.current)
+    setShowToast(true)
+    toastTimeout.current = setTimeout(() => setShowToast(false), 3000)
+  }, [])
 
   const handleDiscard = useCallback(() => {
     setOrg(initialOrg)

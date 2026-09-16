@@ -1,18 +1,18 @@
 import { useState } from 'react'
 
-interface Props {
-  data: Array<{ date: string; count: number }>
-}
+const data = [
+  { label: 'May 1', value: 42 },
+  { label: 'May 5', value: 65 },
+  { label: 'May 10', value: 88 },
+  { label: 'May 15', value: 120 },
+  { label: 'May 20', value: 145 },
+  { label: 'May 25', value: 126 },
+  { label: 'May 31', value: 170 },
+]
 
-function formatLabel(date: string) {
-  return new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric' }).format(new Date(date))
-}
-
-export default function IssuanceTrendChart({ data }: Props) {
+export default function IssuanceTrendChart() {
   const [period, setPeriod] = useState('30 Days')
-  const chartData = data.map((item) => ({ label: formatLabel(item.date), value: item.count }))
-  const max = Math.max(...chartData.map((d) => d.value), 1)
-  const ticks = [max, Math.round(max * 0.75), Math.round(max * 0.5), Math.round(max * 0.25), 0]
+  const max = Math.max(...data.map((d) => d.value))
 
   return (
     <article className="report-chart-card issuance-chart">
@@ -29,24 +29,17 @@ export default function IssuanceTrendChart({ data }: Props) {
       </div>
       <div className="issuance-chart-area">
         <div className="chart-y-axis">
-          {ticks.map((v, index) => <span key={`${v}-${index}`}>{v}</span>)}
+          {[170, 127, 85, 42, 0].map((v) => <span key={v}>{v}</span>)}
         </div>
         <div className="issuance-chart-bars">
-          {chartData.length > 0 ? (
-            chartData.map((d, i) => (
-              <div key={d.label} className="issuance-bar-col" style={{ animationDelay: `${i * 80}ms` }}>
-                <div className="issuance-bar-track">
-                  <div className="issuance-bar-fill" style={{ height: `${(d.value / max) * 100}%` }} />
-                </div>
-                <span className="issuance-bar-label">{d.label}</span>
+          {data.map((d, i) => (
+            <div key={d.label} className="issuance-bar-col" style={{ animationDelay: `${i * 80}ms` }}>
+              <div className="issuance-bar-track">
+                <div className="issuance-bar-fill" style={{ height: `${(d.value / max) * 100}%` }} />
               </div>
-            ))
-          ) : (
-            <div className="report-empty-state">
-              <b>No certificates issued yet</b>
-              <span>Issue your first certificate to see trends here.</span>
+              <span className="issuance-bar-label">{d.label}</span>
             </div>
-          )}
+          ))}
         </div>
       </div>
     </article>

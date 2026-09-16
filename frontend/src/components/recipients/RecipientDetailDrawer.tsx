@@ -45,19 +45,15 @@ export default function RecipientDetailDrawer({ recipient, certificates, onClose
           {/* Recent certificates */}
           <div className="drawer-certificates">
             <h3>Recent Certificates</h3>
-            {certificates.length > 0 ? (
-              certificates.map((cert) => (
-                <div key={cert.id} className="drawer-cert-row">
-                  <div>
-                    <b>{cert.id}</b>
-                    <small>{cert.course}</small>
-                  </div>
-                  <span className={`drawer-cert-status ${cert.status}`}>{cert.status}</span>
+            {certificates.map((cert) => (
+              <div key={cert.id} className="drawer-cert-row">
+                <div>
+                  <b>{cert.id}</b>
+                  <small>{cert.course}</small>
                 </div>
-              ))
-            ) : (
-              <p className="drawer-empty-text">No certificates issued yet.</p>
-            )}
+                <span className={`drawer-cert-status ${cert.status}`}>{cert.status}</span>
+              </div>
+            ))}
           </div>
 
           {/* Actions */}

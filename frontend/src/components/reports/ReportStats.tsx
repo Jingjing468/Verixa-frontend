@@ -1,23 +1,11 @@
 import { FileCheck2, ShieldCheck, ShieldAlert, TrendingUp } from 'lucide-react'
 
-interface Props {
-  totalIssued: number
-  valid: number
-  revoked: number
-  publicVerifications: number
-}
-
-function percent(value: number, total: number) {
-  if (total === 0) return '0%'
-  return `${((value / total) * 100).toFixed(1)}%`
-}
-
-export default function ReportStats({ totalIssued, valid, revoked, publicVerifications }: Props) {
+export default function ReportStats() {
   const stats = [
-    { label: 'Certificates Issued', value: totalIssued.toLocaleString(), detail: 'From your organization', icon: FileCheck2, tone: 'blue' },
-    { label: 'Public Verifications', value: publicVerifications.toLocaleString(), detail: 'No verification events yet', icon: TrendingUp, tone: 'green' },
-    { label: 'Valid Certificates', value: valid.toLocaleString(), detail: `${percent(valid, totalIssued)} of total`, icon: ShieldCheck, tone: 'green' },
-    { label: 'Revoked Certificates', value: revoked.toLocaleString(), detail: `${percent(revoked, totalIssued)} of total`, icon: ShieldAlert, tone: 'red' },
+    { label: 'Certificates Issued', value: '1,248', detail: '+12.5% vs last month', icon: FileCheck2, tone: 'blue' },
+    { label: 'Public Verifications', value: '5,362', detail: '+24% vs last month', icon: TrendingUp, tone: 'green' },
+    { label: 'Valid Certificates', value: '1,102', detail: '88.3% of total', icon: ShieldCheck, tone: 'green' },
+    { label: 'Revoked Certificates', value: '48', detail: '3.8% of total', icon: ShieldAlert, tone: 'red' },
   ]
 
   return (

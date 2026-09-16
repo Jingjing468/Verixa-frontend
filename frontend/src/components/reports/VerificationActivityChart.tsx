@@ -1,10 +1,14 @@
-interface Props {
-  total: number
-}
-
-export default function VerificationActivityChart({ total }: Props) {
-  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((label) => ({ label, value: 0 }))
-  const max = 1
+export default function VerificationActivityChart() {
+  const days = [
+    { label: 'Mon', value: 620 },
+    { label: 'Tue', value: 740 },
+    { label: 'Wed', value: 680 },
+    { label: 'Thu', value: 810 },
+    { label: 'Fri', value: 960 },
+    { label: 'Sat', value: 720 },
+    { label: 'Sun', value: 832 },
+  ]
+  const max = Math.max(...days.map((d) => d.value))
 
   return (
     <article className="report-chart-card verification-chart">
@@ -25,7 +29,7 @@ export default function VerificationActivityChart({ total }: Props) {
           </div>
         ))}
       </div>
-      <p className="chart-total">{total.toLocaleString()} total verifications</p>
+      <p className="chart-total">5,362 total verifications</p>
     </article>
   )
 }

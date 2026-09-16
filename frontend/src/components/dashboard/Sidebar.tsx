@@ -6,13 +6,13 @@ import verixaLogo from '../../assets/verixaicon.png'
 interface SidebarProps {
   open: boolean
   onClose: () => void
-  unreadNotifications: number
 }
 
 interface SidebarItem {
   label: string
   path: string
   icon: LucideIcon
+  badge?: number
   exact?: boolean
 }
 
@@ -23,7 +23,7 @@ const items: SidebarItem[] = [
   { label: 'Recipients', path: '/recipients', icon: UsersRound, exact: true },
   { label: 'Revoked Certificates', path: '/certificates?status=revoked', icon: ShieldCheck },
   { label: 'Reports', path: '/reports', icon: BarChart3, exact: true },
-  { label: 'Notifications', path: '/notifications', icon: Bell, exact: true },
+  { label: 'Notifications', path: '/notifications', icon: Bell, badge: 3, exact: true },
   { label: 'Settings', path: '/settings', icon: Settings, exact: true },
   { label: 'Profile', path: '/profile', icon: UserRound, exact: true },
 ]
@@ -37,7 +37,7 @@ function isActive(pathname: string, item: SidebarItem) {
   return pathname.startsWith(item.path)
 }
 
-function Sidebar({ open, onClose, unreadNotifications }: SidebarProps) {
+function Sidebar({ open, onClose }: SidebarProps) {
   const { pathname } = useLocation()
   // Handle query params for revoked filter
   const fullSearch = typeof window !== 'undefined' ? window.location.search : ''
@@ -73,8 +73,8 @@ function Sidebar({ open, onClose, unreadNotifications }: SidebarProps) {
               >
                 <Icon size={19} />
                 {item.label}
-                {item.path === '/notifications' && unreadNotifications > 0 && (
-                  <span className="sidebar-badge">{unreadNotifications > 99 ? '99+' : unreadNotifications}</span>
+                {item.badge !== undefined && (
+                  <span className="sidebar-badge">{item.badge}</span>
                 )}
               </Link>
             )

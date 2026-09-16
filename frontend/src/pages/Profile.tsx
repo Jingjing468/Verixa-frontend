@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { CheckCircle2, ShieldCheck } from 'lucide-react'
 import DashboardLayout from '../layouts/DashboardLayout'
 import ProfileHero from '../components/profile/ProfileHero'
@@ -10,8 +10,6 @@ import SecuritySummary from '../components/profile/SecuritySummary'
 import ProfileCompletion from '../components/profile/ProfileCompletion'
 import EditProfileModal from '../components/profile/EditProfileModal'
 import type { UserProfile } from '../types/profile'
-import { apiRequest } from '../api/client'
-import type { ProfileResponse } from '../api/types'
 
 const initialUser: UserProfile = {
   id: 'USR-001',
@@ -33,47 +31,15 @@ export default function Profile() {
   const [toast, setToast] = useState('')
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
 
-  useEffect(() => {
-    apiRequest<ProfileResponse>('/profile', { auth: true })
-      .then((response) => {
-        setUser({
-          ...initialUser,
-          fullName: response.profile.fullName,
-          email: response.profile.email,
-          role: response.profile.role === 'admin' ? 'Organization Administrator' : response.profile.role,
-          organization: response.profile.organization.name,
-          organizationEmail: response.profile.organization.email,
-        })
-      })
-      .catch(() => undefined)
-  }, [])
-
   const showToast = (msg: string) => {
     setToast(msg)
     window.setTimeout(() => setToast(''), 2000)
   }
 
   const handleSave = (updated: UserProfile) => {
-    apiRequest<ProfileResponse>('/profile', {
-      method: 'PUT',
-      auth: true,
-      body: { fullName: updated.fullName },
-    })
-      .then((response) => {
-        setUser({
-          ...updated,
-          fullName: response.profile.fullName,
-          email: response.profile.email,
-          role: response.profile.role === 'admin' ? 'Organization Administrator' : response.profile.role,
-          organization: response.profile.organization.name,
-          organizationEmail: response.profile.organization.email,
-        })
-        setEditOpen(false)
-        showToast('Profile updated successfully.')
-      })
-      .catch((requestError) => {
-        showToast(requestError instanceof Error ? requestError.message : 'Profile update failed')
-      })
+    setUser(updated)
+    setEditOpen(false)
+    showToast('Profile updated successfully.')
   }
 
   return (

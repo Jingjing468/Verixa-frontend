@@ -33,10 +33,7 @@ const routeParam = (value: string | string[] | undefined): string =>
   typeof value === "string" ? value : "";
 
 export const dashboard = async (req: Request, res: Response) => {
-  try {
-    const user = auth(req);
-    res.json(await getDashboard(user.organizationId, user));
-  } catch (e) { sendError(res, e); }
+  try { res.json(await getDashboard(auth(req).organizationId)); } catch (e) { sendError(res, e); }
 };
 export const reports = async (req: Request, res: Response) => {
   try { res.json(await getCertificateReport(auth(req).organizationId, req.query)); } catch (e) { sendError(res, e); }

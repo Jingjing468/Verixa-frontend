@@ -4,7 +4,6 @@ import {
   countRecipients,
   createNotification,
   createPasswordResetToken,
-  getDashboardIssuanceTrend,
   getDashboardStats,
   getProfile,
   getRecentCertificates,
@@ -58,24 +57,15 @@ const parseOptionalString = (
   return trimmed.length > 0 ? trimmed : null;
 };
 
-export const getDashboard = async (
-  organizationId: string,
-  user: { fullName: string; email: string; role: string }
-) => {
-  const [stats, totalRecipients, recent, issuanceTrend] = await Promise.all([
+export const getDashboard = async (organizationId: string) => {
+  const [stats, totalRecipients, recent] = await Promise.all([
     getDashboardStats(organizationId),
     countRecipients(organizationId),
     getRecentCertificates(organizationId, 8),
-    getDashboardIssuanceTrend(organizationId),
   ]);
 
   return {
     success: true,
-    user: {
-      fullName: user.fullName,
-      email: user.email,
-      role: user.role,
-    },
     stats: {
       totalCertificates: toNumber(stats.total_certificates),
       validCertificates: toNumber(stats.valid_certificates),
@@ -88,14 +78,9 @@ export const getDashboard = async (
       id: item.id,
       certificateId: item.certificate_id,
       recipientName: item.recipient_name,
-      recipientEmail: item.recipient_email,
       courseName: item.course_name,
       status: item.status,
       createdAt: item.created_at.toISOString(),
-    })),
-    issuanceTrend: issuanceTrend.map((row) => ({
-      date: row.date,
-      count: toNumber(row.count),
     })),
   };
 };

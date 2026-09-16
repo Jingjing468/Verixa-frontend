@@ -1,20 +1,10 @@
 import { FileCheck2, TrendingUp, UsersRound } from 'lucide-react'
 
-interface Props {
-  totalRecipients: number
-  activeCertificates: number
-  recipientsThisMonth: number
-}
-
-export default function RecipientStats({
-  totalRecipients,
-  activeCertificates,
-  recipientsThisMonth,
-}: Props) {
+export default function RecipientStats() {
   const stats = [
-    { label: 'Total Recipients', value: String(totalRecipients), icon: UsersRound, tone: 'blue', detail: 'Loaded from backend' },
-    { label: 'Active Certificates', value: String(activeCertificates), icon: FileCheck2, tone: 'green', detail: 'From recipient certificate counts' },
-    { label: 'Recipients This Month', value: String(recipientsThisMonth), icon: TrendingUp, tone: 'orange', detail: 'Created this month' },
+    { label: 'Total Recipients', value: '842', icon: UsersRound, tone: 'blue', detail: 'Across all programs' },
+    { label: 'Active Certificates', value: '1,102', icon: FileCheck2, tone: 'green', detail: '88.3% of total' },
+    { label: 'Recipients This Month', value: '74', icon: TrendingUp, tone: 'orange', detail: '+18% vs last month' },
   ]
 
   return (

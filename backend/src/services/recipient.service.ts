@@ -25,11 +25,6 @@ const toRecipient = (record: RecipientRecord): Recipient => ({
   fullName: record.full_name,
   email: record.email,
   phone: record.phone,
-  totalCertificates: record.total_certificates,
-  validCertificates: record.valid_certificates,
-  expiredCertificates: record.expired_certificates,
-  revokedCertificates: record.revoked_certificates,
-  lastIssuedAt: record.last_issued_at,
   createdAt: record.created_at.toISOString(),
   updatedAt: record.updated_at.toISOString(),
 });
