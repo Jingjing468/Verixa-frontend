@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ArrowRight, Headphones, Mail } from 'lucide-react'
+import { ArrowRight, Mail } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import AuthLayout from '../components/AuthLayout'
 import { apiRequest } from '../api/client'
@@ -43,7 +43,6 @@ function ForgotPassword() {
       </form>
       <div className="form-divider"><span>or</span></div>
       <Link className="back-button" to="/login">Back to Sign In</Link>
-      <p className="support-copy"><Headphones size={14} /> Still having trouble? <a href="#contact">Contact Support</a></p>
     </AuthLayout>
   )
 }

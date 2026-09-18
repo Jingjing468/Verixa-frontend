@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { CalendarDays, FileCheck2, ShieldAlert, ShieldCheck, Timer } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { FileCheck2, ShieldAlert, ShieldCheck, Timer } from 'lucide-react'
 import DashboardLayout from '../layouts/DashboardLayout'
 import IssuedChart from '../components/dashboard/IssuedChart'
 import QuickActions from '../components/dashboard/QuickActions'
@@ -30,13 +30,22 @@ function Dashboard() {
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null)
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    apiRequest<DashboardResponse>('/dashboard', { auth: true })
-      .then(setDashboard)
-      .catch((requestError) => {
-        setError(requestError instanceof Error ? requestError.message : 'Could not load dashboard')
-      })
+  const inFlight = useRef(false)
+  const refreshDashboard = useCallback(async () => {
+    if (inFlight.current) return
+    inFlight.current = true
+    setError('')
+    try {
+      const response = await apiRequest<DashboardResponse>('/dashboard', { auth: true })
+      setDashboard(response)
+      window.dispatchEvent(new Event('verixa:notifications-updated'))
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : 'Could not load dashboard')
+    } finally {
+      inFlight.current = false
+    }
   }, [])
+  useEffect(() => { void refreshDashboard() }, [refreshDashboard])
 
   const stats = dashboard?.stats
   const recentCertificates = dashboard?.recentCertificateActivity ?? []
@@ -52,9 +61,7 @@ function Dashboard() {
             <h1>Welcome back, {firstName}!</h1>
             <span>Here's what's happening with your certificates today.</span>
           </div>
-          <button className="date-button">
-            <CalendarDays size={18} /> Live backend data
-          </button>
+
         </section>
         {error && <span className="field-error">{error}</span>}
         <section className="dashboard-stats">

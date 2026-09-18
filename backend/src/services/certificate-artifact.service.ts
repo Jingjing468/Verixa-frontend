@@ -5,7 +5,13 @@ import PDFDocument from "pdfkit";
 import QRCode from "qrcode";
 import { getPublicFrontendUrl } from "../config/public-url.js";
 
+export type CertificateDesign = {
+ recipientName?: string; certificateTitle?: string; organizationName?: string; organizationLogo?: string;
+ signature?: string; signerName?: string; signerTitle?: string;
+ template?: 'classic' | 'modern' | 'minimal'; accent?: 'blue' | 'violet' | 'emerald';
+};
 export type CertificatePdfData = {
+ design?: CertificateDesign;
   id: string;
   certificateId: string;
   recipientName: string;
@@ -109,102 +115,47 @@ export const generateCertificatePdf = async (
     document.on("error", reject);
     document.pipe(output);
 
-    const pageWidth = document.page.width;
-    const accent = "#2563eb";
-    const muted = "#5b6472";
-
-    document
-      .rect(0, 0, pageWidth, 26)
-      .fill(accent)
-      .fillColor("#111827");
-
-    document
-      .font("Helvetica-Bold")
-      .fontSize(24)
-      .fillColor(accent)
-      .text("Verixa", 54, 56, { align: "left" });
-
-    document
-      .font("Helvetica")
-      .fontSize(10)
-      .fillColor(muted)
-      .text("Blockchain-ready digital certificate", 54, 86);
-
-    document
-      .moveTo(54, 112)
-      .lineTo(pageWidth - 54, 112)
-      .strokeColor("#d8dee9")
-      .stroke();
-
-    document
-      .font("Helvetica-Bold")
-      .fontSize(30)
-      .fillColor("#111827")
-      .text("Certificate of Completion", 54, 142, { align: "center" });
-
-    document
-      .font("Helvetica")
-      .fontSize(13)
-      .fillColor(muted)
-      .text("This certificate is proudly presented to", 54, 194, {
-        align: "center",
-      });
-
-    document
-      .font("Helvetica-Bold")
-      .fontSize(28)
-      .fillColor("#111827")
-      .text(certificate.recipientName, 54, 224, { align: "center" });
-
-    document
-      .font("Helvetica")
-      .fontSize(13)
-      .fillColor(muted)
-      .text("for successful completion of", 54, 274, { align: "center" });
-
-    document
-      .font("Helvetica-Bold")
-      .fontSize(20)
-      .fillColor("#111827")
-      .text(certificate.courseName, 88, 304, { align: "center" });
-
-    document
-      .font("Helvetica")
-      .fontSize(12)
-      .fillColor(muted)
-      .text(`Issued by ${certificate.organizationName}`, 54, 354, {
-        align: "center",
-      });
-
-    document
-      .font("Helvetica")
-      .fontSize(11)
-      .fillColor("#111827")
-      .text(`Certificate ID: ${certificate.certificateId}`, 74, 420)
-      .text(`Issue date: ${certificate.issueDate}`, 74, 442)
-      .text(`Expiry date: ${certificate.expiryDate ?? "No expiry"}`, 74, 464);
-
-    document.image(qrCodeBuffer, pageWidth - 214, 374, {
-      width: 126,
-      height: 126,
-    });
-
-    document
-      .font("Helvetica")
-      .fontSize(9)
-      .fillColor(muted)
-      .text("Scan to verify", pageWidth - 220, 506, {
-        width: 138,
-        align: "center",
-      });
-
-    document
-      .font("Helvetica")
-      .fontSize(9)
-      .fillColor(muted)
-      .text(`Verify at: ${verificationUrl}`, 54, 524, {
-        align: "center",
-      });
+    const w = document.page.width, h = document.page.height;
+    const d = certificate.design ?? {};
+    const accent = {blue:'#3975ff',violet:'#8264df',emerald:'#2fa879'}[d.accent ?? 'blue'];
+    const muted = '#90a0b9';
+    document.rect(0,0,w,h).fill(d.template === 'modern' ? '#f5f8ff' : '#ffffff');
+    document.roundedRect(12,12,w-24,h-24,12).lineWidth(1).strokeColor('#dce5f4').stroke();
+    if(d.template !== 'minimal') {
+      document.save().rect(13,13,w-26,h-26).clip();
+      document.circle(12,12,38).lineWidth(5).strokeColor('#e5eeff').stroke();
+      document.circle(w-12,h-12,38).stroke(); document.restore();
+    }
+    const image = (source: string,x: number,y: number,width: number,height: number) => {
+      document.image(Buffer.from(source.split(',')[1] ?? '', 'base64'),x,y,{fit:[width,height],align:'center',valign:'center'});
+    };
+    const text = (value: string,x: number,y: number,width: number,size: number,color: string,font='Helvetica',align: 'left'|'center'|'right'='left') => {
+      document.font(font).fontSize(size).fillColor(color).text(value,x,y,{width,align,height:42,ellipsis:true});
+    };
+    let brandX = 48;
+    if(d.organizationLogo){image(d.organizationLogo,48,44,32,32);brandX=92;}
+    document.image(path.resolve(import.meta.dirname,'../../../frontend/src/assets/verixaicon.png'),brandX,35,{width:104});
+    text('VERIFIED CREDENTIAL',brandX,78,160,6,muted,'Helvetica-Bold');
+    text('CERTIFICATE OF ACHIEVEMENT',48,142,w-96,9,accent,'Helvetica-Bold','center');
+    text(d.certificateTitle || 'Certificate of Completion',48,174,w-96,27,'#354156','Helvetica','center');
+    text('This certifies that',48,235,w-96,11,muted,'Helvetica','center');
+    text(certificate.recipientName,48,260,w-96,28,accent,'Times-Roman','center');
+    text('has successfully completed',48,318,w-96,11,muted,'Helvetica','center');
+    text(certificate.courseName,48,344,w-96,15,'#48556a','Helvetica','center');
+    document.moveTo(48,418).lineTo(w-48,418).lineWidth(1).strokeColor('#ecf0f5').stroke();
+    text('Issued by',48,491,220,9,muted);
+    text(d.organizationName || certificate.organizationName,48,511,220,10,'#536177','Helvetica-Bold');
+    text('Issue date',286,491,150,9,muted);
+    const date = new Intl.DateTimeFormat('en-US',{month:'long',day:'numeric',year:'numeric',timeZone:'UTC'}).format(new Date(certificate.issueDate));
+    text(date,286,511,150,10,'#536177','Helvetica-Bold');
+    if(d.signature){
+      image(d.signature,470,456,90,36);
+      text(d.signerName || '',452,498,126,10,'#536177','Helvetica-Bold','center');
+      text(d.signerTitle || '',452,515,126,8,muted,'Helvetica','center');
+    }
+    document.image(qrCodeBuffer,w-128,454,{width:62,height:62});
+    text(certificate.certificateId,w-196,524,148,8,muted,'Helvetica','right');
+    document.link(w-128,454,62,62,verificationUrl);
 
     document.end();
   });

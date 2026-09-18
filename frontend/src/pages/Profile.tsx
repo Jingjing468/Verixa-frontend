@@ -28,6 +28,8 @@ const initialUser: UserProfile = {
 }
 
 export default function Profile() {
+  const [certificateStats, setCertificateStats] = useState<{ issued: number; revoked: number; active: number } | null>(null)
+  const [statsError, setStatsError] = useState(false)
   const [user, setUser] = useState(initialUser)
   const [editOpen, setEditOpen] = useState(false)
   const [toast, setToast] = useState('')
@@ -36,6 +38,8 @@ export default function Profile() {
   useEffect(() => {
     apiRequest<ProfileResponse>('/profile', { auth: true })
       .then((response) => {
+        setCertificateStats(response.profile.certificateStats)
+        setAvatarUrl(response.profile.avatarUrl)
         setUser({
           ...initialUser,
           fullName: response.profile.fullName,
@@ -45,7 +49,7 @@ export default function Profile() {
           organizationEmail: response.profile.organization.email,
         })
       })
-      .catch(() => undefined)
+      .catch(() => setStatsError(true))
   }, [])
 
   const showToast = (msg: string) => {
@@ -69,11 +73,30 @@ export default function Profile() {
           organizationEmail: response.profile.organization.email,
         })
         setEditOpen(false)
+        window.dispatchEvent(new Event('verixa:profile-updated'))
         showToast('Profile updated successfully.')
       })
       .catch((requestError) => {
         showToast(requestError instanceof Error ? requestError.message : 'Profile update failed')
       })
+  }
+
+  const saveAvatar = async (url: string) => {
+    try {
+      const image = new Image()
+      image.src = url
+      await image.decode()
+      const canvas = document.createElement('canvas')
+      canvas.width = canvas.height = 256
+      const size = Math.min(image.naturalWidth, image.naturalHeight)
+      canvas.getContext('2d')!.drawImage(image, (image.naturalWidth-size)/2, (image.naturalHeight-size)/2, size, size, 0, 0, 256, 256)
+      const response = await apiRequest<ProfileResponse>('/profile', {
+        method: 'PUT', auth: true, body: { fullName: user.fullName, avatarUrl: canvas.toDataURL('image/png') },
+      })
+      setAvatarUrl(response.profile.avatarUrl)
+      window.dispatchEvent(new Event('verixa:profile-updated'))
+      showToast('Profile photo saved.')
+    } catch (error) { showToast(error instanceof Error ? error.message : 'Could not save profile photo') }
   }
 
   return (
@@ -88,9 +111,9 @@ export default function Profile() {
           </div>
         </header>
 
-        <ProfileHero user={user} onEdit={() => setEditOpen(true)} avatarUrl={avatarUrl} onAvatarChange={setAvatarUrl} />
+        <ProfileHero user={user} onEdit={() => setEditOpen(true)} avatarUrl={avatarUrl} onAvatarChange={saveAvatar} />
 
-        <AccountStats />
+        <AccountStats stats={certificateStats} error={statsError} />
 
         <div className="profile-grid">
           <div className="profile-grid-main">

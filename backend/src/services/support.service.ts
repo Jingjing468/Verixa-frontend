@@ -22,6 +22,7 @@ import { findUserByEmail } from "../repositories/auth.repository.js";
 import { mapDatabaseRoleToApiRole } from "./auth.service.js";
 import { sendPasswordResetEmail } from "./email.service.js";
 import { HttpError } from "../utils/http-error.js";
+import { getEmailConfig } from "../config/email.js";
 import { getRequiredString, isRecord, isValidEmail } from "../utils/validation.js";
 
 const uuidPattern =
@@ -175,6 +176,8 @@ export const getUserProfile = async (userId: string) => {
   return {
     success: true,
     profile: {
+      certificateStats: { issued: profile.certificates_issued, revoked: profile.certificates_revoked, active: profile.certificates_active },
+      avatarUrl: profile.avatar_url,
       fullName: profile.full_name,
       email: profile.email,
       role: mapDatabaseRoleToApiRole(profile.role),
@@ -191,7 +194,9 @@ export const getUserProfile = async (userId: string) => {
 export const updateUserProfile = async (userId: string, body: unknown) => {
   if (!isRecord(body)) throw new HttpError(400, "Request body must be a JSON object");
   const fullName = getRequiredString(body, "fullName");
-  const profile = await updateUserFullName(userId, fullName);
+  const avatarUrl = body.avatarUrl;
+  if (avatarUrl !== undefined && avatarUrl !== null && (typeof avatarUrl !== 'string' || avatarUrl.length > 512 * 1024 || !/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(avatarUrl))) throw new HttpError(400, 'Invalid profile photo');
+  const profile = await updateUserFullName(userId, fullName, avatarUrl as string | null | undefined);
   if (!profile) throw new HttpError(404, "Profile not found");
   return getUserProfile(userId);
 };
@@ -229,6 +234,11 @@ export const forgotPassword = async (body: unknown) => {
   if (!isRecord(body)) throw new HttpError(400, "Request body must be a JSON object");
   const email = getRequiredString(body, "email").toLowerCase();
   if (!isValidEmail(email)) throw new HttpError(400, "email must be a valid email address");
+  try {
+    getEmailConfig();
+  } catch {
+    throw new HttpError(503, "Password reset email is unavailable. Please contact support.");
+  }
   const user = await findUserByEmail(email);
   if (user) {
     const token = randomBytes(32).toString("hex");
@@ -247,6 +257,7 @@ export const forgotPassword = async (body: unknown) => {
         "Password reset email delivery failed:",
         error instanceof Error ? error.message : "Unknown error"
       );
+      throw new HttpError(503, "Could not send the reset email. Please try again later.");
     }
   }
   return { success: true, message: "If the email exists, password reset instructions will be sent" };

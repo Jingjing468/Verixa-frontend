@@ -73,7 +73,6 @@ const initialPreferences: Preferences = {
   timezone: 'Asia/Phnom_Penh',
   dateFormat: 'DD MMM YYYY',
   itemsPerPage: 10,
-  theme: 'light',
 }
 
 function Settings() {
@@ -105,6 +104,7 @@ function Settings() {
         }))
         setProfile((current) => ({
           ...current,
+          avatarUrl: response.profile.avatarUrl,
           fullName: response.profile.fullName,
           email: response.profile.email,
           role: response.profile.role === 'admin' ? 'Organization Administrator' : response.profile.role,
@@ -129,17 +129,18 @@ function Settings() {
           ? apiRequest('/profile', {
             method: 'PUT',
             auth: true,
-            body: { fullName: profile.fullName },
+            body: { fullName: profile.fullName, avatarUrl: profile.avatarUrl },
           })
           : Promise.resolve()
 
     saveRequest.then(() => {
+      window.dispatchEvent(new Event('verixa:profile-updated'))
       setHasChanges(false)
       if (toastTimeout.current) clearTimeout(toastTimeout.current)
       setShowToast(true)
       toastTimeout.current = setTimeout(() => setShowToast(false), 3000)
     })
-  }, [activeSection, org.name, org.logoUrl, profile.fullName])
+  }, [activeSection, org.name, org.logoUrl, profile.fullName, profile.avatarUrl])
 
   const handleDiscard = useCallback(() => {
     setOrg(initialOrg)

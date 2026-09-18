@@ -17,6 +17,7 @@ export type CertificateSummary = {
 };
 
 export type CertificateDetail = CertificateSummary & {
+  blockchain: { network: string; transactionHash: string; blockNumber: number; certificateHash: string } | null;
   organization: {
     id: string;
     name: string;

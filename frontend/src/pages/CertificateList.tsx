@@ -138,7 +138,7 @@ export default function CertificateList() {
 
         <section className="certificate-stats">
           {[
-            ['Total Certificates', String(certificates.length), FileCheck2, 'blue', 'Loaded from backend'],
+            ['Total Certificates', String(certificates.length), FileCheck2, 'blue', 'All issued credentials'],
             ['Valid', String(certificates.filter((item) => item.status === 'valid').length), ShieldCheck, 'green', 'Current certificates'],
             ['Expired', String(certificates.filter((item) => item.status === 'expired').length), ChevronDown, 'orange', 'Past expiry date'],
             ['Revoked', String(certificates.filter((item) => item.status === 'revoked').length), FileCheck2, 'red', 'Revocation history kept'],

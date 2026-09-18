@@ -13,9 +13,10 @@ export default function PublicNavbar() {
         <a href="/#how-it-works">How It Works</a>
         <a href="/#contact">About</a>
       </nav>
-      <Link className="login-button" to="/login">
-        Admin Login
-      </Link>
+      <div className="public-auth-actions">
+        <Link className="public-sign-in" to="/login">Sign In</Link>
+        <Link className="login-button" to="/register">Get Started</Link>
+      </div>
     </header>
   )
 }

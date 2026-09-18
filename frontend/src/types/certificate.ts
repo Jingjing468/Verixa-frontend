@@ -36,6 +36,8 @@ export interface CertificateFormData {
   achievement: string
   template: CertificateTemplate
   organizationName: string
+  organizationLogo?: string
+  signature?: string
   signerName: string
   signerTitle: string
   accent: AccentStyle

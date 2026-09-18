@@ -41,6 +41,10 @@ export const createEmailTransporter = (
     host: config.host,
     port: config.port,
     secure: config.secure,
+    requireTLS: !config.secure,
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 20000,
     auth: {
       user: config.user,
       pass: config.pass,

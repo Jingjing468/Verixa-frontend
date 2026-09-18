@@ -10,16 +10,22 @@ function formatLabel(date: string) {
 
 export default function IssuanceTrendChart({ data }: Props) {
   const [period, setPeriod] = useState('30 Days')
-  const chartData = data.map((item) => ({ label: formatLabel(item.date), value: item.count }))
-  const max = Math.max(...chartData.map((d) => d.value), 1)
-  const ticks = [max, Math.round(max * 0.75), Math.round(max * 0.5), Math.round(max * 0.25), 0]
+  const days = period === '7 Days' ? 7 : period === '30 Days' ? 30 : 90
+  const end = new Date()
+  end.setHours(0, 0, 0, 0)
+  const start = new Date(end)
+  start.setDate(start.getDate() - days + 1)
+  const filtered = data.filter(item => new Date(item.date) >= start && new Date(item.date) < new Date(end.getTime() + 86400000))
+  const chartData = filtered.map(item => ({ label: formatLabel(item.date), value: item.count }))
+  const max = Math.max(...chartData.map(d => d.value), 1)
+  const ticks = Array.from(new Set([max, Math.floor(max / 2), 0]))
 
   return (
     <article className="report-chart-card issuance-chart">
       <div className="report-chart-header">
         <div>
-          <h2>Certificates Issued Over Time</h2>
-          <p>See how many certificates your organization issued during the selected period.</p>
+          <h2>Issuance trend</h2>
+          <p>Certificates created during the selected period.</p>
         </div>
         <div className="chart-filter-tabs">
           {['7 Days', '30 Days', '3 Months'].map((p) => (
@@ -36,15 +42,15 @@ export default function IssuanceTrendChart({ data }: Props) {
             chartData.map((d, i) => (
               <div key={d.label} className="issuance-bar-col" style={{ animationDelay: `${i * 80}ms` }}>
                 <div className="issuance-bar-track">
-                  <div className="issuance-bar-fill" style={{ height: `${(d.value / max) * 100}%` }} />
+                  <div className="issuance-bar-fill" title={`${d.label}: ${d.value} certificates`} style={{ height: `${(d.value / max) * 100}%` }} />
                 </div>
                 <span className="issuance-bar-label">{d.label}</span>
               </div>
             ))
           ) : (
             <div className="report-empty-state">
-              <b>No certificates issued yet</b>
-              <span>Issue your first certificate to see trends here.</span>
+              <b>No certificates in this period</b>
+              <span>Choose a longer period or issue a new certificate.</span>
             </div>
           )}
         </div>

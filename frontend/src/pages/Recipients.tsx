@@ -1,3 +1,6 @@
+import { useNavigate } from 'react-router-dom'
+import { createPortal } from 'react-dom'
+import AddRecipientModal from '../components/recipients/AddRecipientModal'
 import { Ellipsis, Eye, Mail, Plus } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import DashboardLayout from '../layouts/DashboardLayout'
@@ -40,6 +43,9 @@ async function loadAllCertificates() {
 }
 
 export default function Recipients() {
+  const navigate = useNavigate()
+  const [addOpen, setAddOpen] = useState(false)
+  const [message, setMessage] = useState('')
   const [recipients, setRecipients] = useState<Recipient[]>([])
   const [certificates, setCertificates] = useState<CertificateSummary[]>([])
   const [error, setError] = useState('')
@@ -48,6 +54,7 @@ export default function Recipients() {
   const [filter, setFilter] = useState<RecipientFilter>('all')
   const [sort, setSort] = useState<RecipientSort>('newest')
   const [selected, setSelected] = useState<Recipient | null>(null)
+  const [menuPosition, setMenuPosition] = useState({ bottom: 0, right: 0 })
   const [actionMenu, setActionMenu] = useState<string | null>(null)
 
   useEffect(() => {
@@ -75,6 +82,22 @@ export default function Recipients() {
       })
       .finally(() => setLoading(false))
   }, [])
+
+  useEffect(() => {
+    if (!actionMenu) return
+    const dismiss = () => setActionMenu(null)
+    const escape = (event: KeyboardEvent) => { if (event.key === 'Escape') dismiss() }
+    document.addEventListener('click', dismiss)
+    window.addEventListener('scroll', dismiss, true)
+    window.addEventListener('resize', dismiss)
+    window.addEventListener('keydown', escape)
+    return () => {
+      document.removeEventListener('click', dismiss)
+      window.removeEventListener('scroll', dismiss, true)
+      window.removeEventListener('resize', dismiss)
+      window.removeEventListener('keydown', escape)
+    }
+  }, [actionMenu])
 
   const filtered = useMemo(() => {
     return recipients
@@ -134,7 +157,7 @@ export default function Recipients() {
             <h1>Recipients</h1>
             <span>View the people who have received credentials from your organization.</span>
           </div>
-          <button className="issue-action">
+          <button type="button" className="issue-action" onClick={() => setAddOpen(true)}>
             <Plus size={16} /> Add Recipient
           </button>
         </header>
@@ -144,6 +167,7 @@ export default function Recipients() {
           activeCertificates={activeCertificates}
           recipientsThisMonth={recipientsThisMonth}
         />
+        {message && <p role="status">{message}</p>}
         {error && <span className="field-error">{error}</span>}
 
         <RecipientFilters
@@ -195,17 +219,22 @@ export default function Recipients() {
                       <td className="action-cell" onClick={(e) => e.stopPropagation()}>
                         <button
                           className="action-trigger"
-                          onClick={() => setActionMenu(actionMenu === r.id ? null : r.id)}
+                          onClick={(event) => {
+                            const rect = event.currentTarget.getBoundingClientRect()
+                            setMenuPosition({ bottom: window.innerHeight - rect.top + 6, right: Math.max(8, window.innerWidth - rect.right) })
+                            setActionMenu(actionMenu === r.id ? null : r.id)
+                          }}
+                          aria-expanded={actionMenu === r.id}
                           aria-label={`Actions for ${r.name}`}
                         >
                           <Ellipsis size={16} />
                         </button>
-                        {actionMenu === r.id && (
-                          <div className="recipient-action-menu">
+                        {actionMenu === r.id && createPortal(
+                          <div className="recipient-action-menu" style={{ position: 'fixed', top: 'auto', bottom: menuPosition.bottom, right: menuPosition.right, zIndex: 100 }} onClick={(event) => event.stopPropagation()}>
                             <button onClick={() => { setSelected(r); setActionMenu(null) }}><Eye size={14} /> View Recipient</button>
                             <button><Mail size={14} /> Send Email</button>
-                            <button><Plus size={14} /> Issue Certificate</button>
-                          </div>
+                            <button onClick={() => navigate(`/certificates/create?recipientId=${encodeURIComponent(r.id)}`)}><Plus size={14} /> Issue Certificate</button>
+                          </div>, document.body
                         )}
                       </td>
                     </tr>
@@ -224,6 +253,16 @@ export default function Recipients() {
         </footer>
       </div>
 
+      {addOpen && <AddRecipientModal onClose={() => setAddOpen(false)} onCreated={(recipient) => {
+        setRecipients(current => [{ id: recipient.id, name: recipient.fullName, email: recipient.email,
+          organization: recipient.organizationId, totalCertificates: recipient.totalCertificates,
+          validCertificates: recipient.validCertificates, expiredCertificates: recipient.expiredCertificates,
+          revokedCertificates: recipient.revokedCertificates, lastIssued: formatDate(recipient.lastIssuedAt), createdAt: recipient.createdAt,
+        }, ...current])
+        clear()
+        setMessage(`${recipient.fullName} added successfully.`)
+        setAddOpen(false)
+      }} />}
       {/* Detail Drawer */}
       {selected && (
         <RecipientDetailDrawer

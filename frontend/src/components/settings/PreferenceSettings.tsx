@@ -1,4 +1,4 @@
-import { Globe, Clock, Calendar, LayoutGrid, Sun } from 'lucide-react'
+import { Globe, Clock, Calendar, LayoutGrid } from 'lucide-react'
 import type { Preferences as PreferencesType } from '../../types/settings'
 
 interface Props {
@@ -85,28 +85,7 @@ function PreferenceSettings({ preferences, onChange }: Props) {
             </div>
           </div>
 
-          <div className="settings-field full-width">
-            <label>
-              <Sun size={14} />
-              Theme
-            </label>
-            <div className="settings-theme-options">
-              {(['light', 'system', 'dark'] as const).map((t) => (
-                <button
-                  key={t}
-                  className={`settings-theme-card ${preferences.theme === t ? 'active' : ''}`}
-                  onClick={() => update('theme', t)}
-                >
-                  <div className={`settings-theme-preview ${t}`}>
-                    {t === 'light' && <Sun size={16} />}
-                    {t === 'system' && <LayoutGrid size={16} />}
-                    {t === 'dark' && <Sun size={16} style={{ color: '#e4ecff' }} />}
-                  </div>
-                  <span>{t.charAt(0).toUpperCase() + t.slice(1)}</span>
-                </button>
-              ))}
-            </div>
-          </div>
+
         </div>
       </div>
     </div>

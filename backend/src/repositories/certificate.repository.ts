@@ -71,6 +71,7 @@ export type CertificateHashRecord = {
 };
 
 export type CertificatePdfRecord = {
+  design: import("../services/certificate-artifact.service.js").CertificateDesign;
   id: string;
   certificate_id: string;
   recipient_name: string;
@@ -465,7 +466,8 @@ export const findCertificatePdfDataByIdAndOrganization = async (
         o.name AS organization_name,
         c.issue_date::text AS issue_date,
         c.expiry_date::text AS expiry_date,
-        c.pdf_url
+        c.pdf_url,
+        c.design
       FROM certificates c
       INNER JOIN organizations o ON o.id = c.organization_id
       WHERE c.id = $1 AND c.organization_id = $2
@@ -508,7 +510,8 @@ export const findCertificateEmailDataByIdAndOrganization = async (
         c.issue_date::text AS issue_date,
         c.expiry_date::text AS expiry_date,
         ${certificateStatusSql} AS status,
-        c.pdf_url
+        c.pdf_url,
+        c.design
       FROM certificates c
       INNER JOIN organizations o ON o.id = c.organization_id
       WHERE c.id = $1 AND c.organization_id = $2

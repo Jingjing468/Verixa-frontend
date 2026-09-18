@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom'
 import { Copy, FileCheck2, Mail, Plus, Send, ShieldCheck, X } from 'lucide-react'
 import type { Recipient, RecipientCertificate } from '../../types/recipient'
 
@@ -8,6 +9,7 @@ interface Props {
 }
 
 export default function RecipientDetailDrawer({ recipient, certificates, onClose }: Props) {
+  const navigate = useNavigate()
   const initials = recipient.name.split(' ').map((n) => n[0]).join('').slice(0, 2)
 
   return (
@@ -62,7 +64,7 @@ export default function RecipientDetailDrawer({ recipient, certificates, onClose
 
           {/* Actions */}
           <div className="drawer-actions">
-            <button className="issue-action" style={{ width: '100%' }}>
+            <button type="button" className="issue-action" style={{ width: '100%' }} onClick={() => navigate(`/certificates/create?recipientId=${encodeURIComponent(recipient.id)}`)}>
               <Plus size={15} /> Issue Certificate
             </button>
             <button className="cancel-action" style={{ width: '100%' }}>
