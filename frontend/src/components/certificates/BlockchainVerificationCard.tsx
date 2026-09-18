@@ -16,7 +16,7 @@ export default function BlockchainVerificationCard({ blockchain, onCopy }: Props
         <div>
           <h2>Blockchain Verification</h2>
           <p>
-            <i /> Verified on Blockchain
+            <i /> {blockchain.verified ? 'Recorded on Blockchain' : 'Not anchored on blockchain'}
           </p>
         </div>
       </div>
@@ -54,14 +54,14 @@ export default function BlockchainVerificationCard({ blockchain, onCopy }: Props
         <div>
           <small>Verification Status</small>
           <b className="hash-match">
-            <Hash size={12} className="inline-icon" /> Hash Matched
+            <Hash size={12} className="inline-icon" /> {blockchain.verified ? 'Recorded hash' : 'Not available'}
           </b>
         </div>
       </div>
 
-      <button className="blockchain-button">
-        <ArrowUpRight size={15} /> View Transaction
-      </button>
+      {blockchain.verified && /^0x[0-9a-fA-F]{64}$/.test(blockchain.transactionHash) ? (
+        <a className="blockchain-button" href={`https://sepolia.etherscan.io/tx/${blockchain.transactionHash}`} target="_blank" rel="noopener noreferrer"><ArrowUpRight size={15} /> View Transaction</a>
+      ) : <button className="blockchain-button" disabled title="This certificate has no blockchain transaction">No transaction available</button>}
     </article>
   )
 }

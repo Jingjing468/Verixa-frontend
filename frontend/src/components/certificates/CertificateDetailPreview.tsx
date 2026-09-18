@@ -1,3 +1,5 @@
+import { useEffect, useRef, useState } from 'react'
+import { apiUrl, getAuthToken } from '../../api/client'
 import { ArrowUpRight, Award, QrCode, ShieldCheck, Link2 } from 'lucide-react'
 import verixaLogo from '../../assets/verixaicon.png'
 import type { CertificateDetail } from '../../types/certificate'
@@ -7,6 +9,28 @@ interface Props {
 }
 
 export default function CertificateDetailPreview({ certificate }: Props) {
+  const [previewOpen, setPreviewOpen] = useState(false)
+  const [pdfUrl, setPdfUrl] = useState('')
+  const [previewError, setPreviewError] = useState('')
+  const dialog = useRef<HTMLDialogElement>(null)
+  useEffect(() => {
+    if (!previewOpen) return
+    dialog.current?.showModal()
+    const controller = new AbortController()
+    let url = ''
+    setPreviewError('')
+    setPdfUrl('')
+    const token = getAuthToken()
+    fetch(apiUrl(`/certificates/${certificate.id}/pdf`), { headers: token ? { Authorization: `Bearer ${token}` } : {}, signal: controller.signal })
+      .then(async response => {
+        if (!response.ok) throw new Error('Could not load certificate PDF')
+        const blob = await response.blob()
+        if (controller.signal.aborted) return
+        url = URL.createObjectURL(blob)
+        setPdfUrl(url)
+      }).catch(error => { if (!controller.signal.aborted) setPreviewError(error.message) })
+    return () => { controller.abort(); if (url) URL.revokeObjectURL(url) }
+  }, [previewOpen, certificate.id])
   return (
     <section className="detail-preview-column">
       <div className="detail-certificate">
@@ -92,9 +116,13 @@ export default function CertificateDetailPreview({ certificate }: Props) {
         )}
       </div>
 
-      <button className="full-preview">
+      <button type="button" className="full-preview" onClick={() => setPreviewOpen(true)}>
         <ArrowUpRight size={15} /> Open Full Preview
       </button>
+      {previewOpen && <dialog ref={dialog} className="certificate-pdf-dialog" aria-label="Full certificate preview" onCancel={() => setPreviewOpen(false)}>
+        <header><h2>Certificate Preview</h2><button type="button" className="cancel-action" onClick={() => setPreviewOpen(false)}>Close</button></header>
+        {previewError ? <p role="alert">{previewError}</p> : pdfUrl ? <iframe src={pdfUrl} title="Certificate PDF" /> : <p role="status">Loading preview...</p>}
+      </dialog>}
     </section>
   )
 }

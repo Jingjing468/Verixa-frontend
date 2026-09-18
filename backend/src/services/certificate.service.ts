@@ -1,3 +1,4 @@
+import { parseCertificateDesign } from "./certificate-design.js";
 import type { PoolClient } from "pg";
 import { pool } from "../config/database.js";
 import {
@@ -167,6 +168,7 @@ const toSummary = (record: CertificateRecord): CertificateSummary => ({
 });
 
 const toDetail = (record: CertificateDetailRecord): CertificateDetail => ({
+  blockchain: null,
   ...toSummary(record),
   organization: {
     id: record.organization_id,
@@ -259,6 +261,7 @@ const regenerateCertificateHash = async (
 
 const toCertificatePdfData = (record: CertificatePdfRecord): CertificatePdfData => ({
   id: record.id,
+  design: record.design,
   certificateId: record.certificate_id,
   recipientName: record.recipient_name,
   courseName: record.course_name,
@@ -341,8 +344,10 @@ export const addCertificate = async (
   success: true;
   certificate: CertificateSummary;
   emailDelivery: CertificateEmailDeliveryResult | null;
+  warnings: string[];
 }> => {
   const input = parseCertificateInput(body);
+  const design = parseCertificateDesign(isRecord(body) ? body.design : undefined);
   const client = await pool.connect();
   let createdCertificate: CertificateRecord | null = null;
   let createdCertificateHash: string | null = null;
@@ -364,12 +369,13 @@ export const addCertificate = async (
       client,
       organizationId,
       issuedBy,
-      recipient,
+      { ...recipient, full_name: design.recipientName?.trim() || recipient.full_name },
       input.courseName,
       input.issueDate,
       input.expiryDate
     );
 
+    await client.query("UPDATE certificates SET design = $1 WHERE id = $2", [JSON.stringify(design), certificate.id]);
     const certificateHash = await regenerateCertificateHash(client, certificate.id);
 
     await client.query("COMMIT");
@@ -383,7 +389,9 @@ export const addCertificate = async (
     client.release();
   }
 
+  const warnings: string[] = [];
   try {
+    if (process.env.BLOCKCHAIN_ENABLED !== "false") {
     const blockchainResult = await createBlockchainService().issueCertificateOnChain(
       createdCertificate.certificate_id,
       createdCertificateHash
@@ -398,6 +406,9 @@ export const addCertificate = async (
       certificateHash: createdCertificateHash,
     });
 
+    } else {
+      warnings.push("Certificate created without blockchain anchoring.");
+    }
     await regenerateCertificatePdf(organizationId, createdCertificate.id);
     await createNotificationSafely({
       organizationId,
@@ -442,10 +453,15 @@ export const addCertificate = async (
     };
   }
 
+  if (emailDelivery && !emailDelivery.success) {
+    warnings.push("Certificate created, but the delivery email was not sent. Configure email and resend from the certificate page.");
+  }
+
   return {
     success: true,
     certificate: toSummary(createdCertificate),
     emailDelivery,
+    warnings,
   };
 };
 
@@ -601,7 +617,10 @@ export const getCertificate = async (
 
   return {
     success: true,
-    certificate: toDetail(certificate),
+    certificate: { ...toDetail(certificate), blockchain: await (async () => {
+      const record = await findBlockchainRecordByCertificateId(id);
+      return record ? { network: record.network, transactionHash: record.transaction_hash, blockNumber: Number(record.block_number ?? 0), certificateHash: record.certificate_hash } : null;
+    })() },
   };
 };
 

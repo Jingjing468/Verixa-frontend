@@ -104,7 +104,7 @@ export type CertificatesResponse = {
 
 export type CertificateDetailResponse = {
   success: true
-  certificate: CertificateSummary & {
+  certificate: { blockchain?: { network: string; transactionHash: string; blockNumber: number; certificateHash: string } | null } & CertificateSummary & {
     organization: ApiOrganization
     issuer: {
       id: string
@@ -174,6 +174,8 @@ export type NotificationsResponse = {
 export type ProfileResponse = {
   success: true
   profile: {
+    certificateStats: { issued: number; revoked: number; active: number }
+    avatarUrl: string | null;
     fullName: string
     email: string
     role: 'admin' | 'issuer' | 'viewer'

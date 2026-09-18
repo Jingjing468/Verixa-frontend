@@ -18,6 +18,7 @@ import {
   type EmailTransporter,
 } from "./email.service.js";
 import { createNotification } from "../repositories/support.repository.js";
+import { getEmailConfig } from "../config/email.js";
 
 const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -159,6 +160,13 @@ export const sendCertificateEmail = async (
   transporter?: EmailTransporter
 ): Promise<CertificateEmailDeliveryResult> => {
   const certificate = await getSendableCertificate(organizationId, certificateId);
+  if (!transporter) {
+    try {
+      getEmailConfig();
+    } catch {
+      throw new HttpError(503, "Email sending is not configured. Ask your administrator to configure the Gmail sender and App Password.");
+    }
+  }
 
   const delivery = await sendCertificateEmailAttempt(
     {

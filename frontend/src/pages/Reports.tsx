@@ -1,10 +1,8 @@
-import { CalendarDays, Download, FileCheck2, ShieldAlert, ShieldCheck, Timer } from 'lucide-react'
+import { Download, FileCheck2, ShieldAlert, ShieldCheck, Timer } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import DashboardLayout from '../layouts/DashboardLayout'
-import ReportStats from '../components/reports/ReportStats'
 import IssuanceTrendChart from '../components/reports/IssuanceTrendChart'
 import StatusBreakdownChart from '../components/reports/StatusBreakdownChart'
-import VerificationActivityChart from '../components/reports/VerificationActivityChart'
 import TopPrograms from '../components/reports/TopPrograms'
 import RecentReportActivity from '../components/reports/RecentReportActivity'
 import ExportReportModal from '../components/reports/ExportReportModal'
@@ -82,17 +80,15 @@ export default function Reports() {
 
   return (
     <DashboardLayout>
-      <div className="dashboard-content">
+      <div className="dashboard-content reports-content">
         <header className="dashboard-welcome dashboard-enter">
           <div>
             <p>Analytics</p>
             <h1>Reports</h1>
             <span>Track certificate issuance, verification, and status trends.</span>
           </div>
-          <div style={{ display: 'flex', gap: 10 }}>
-            <button className="date-button">
-              <CalendarDays size={16} /> Live backend report
-            </button>
+          <div className="report-heading-actions">
+            <span className="report-live-badge"><i /> Live overview</span>
             <button className="issue-action" onClick={() => setExportOpen(true)}>
               <Download size={16} /> Export Report
             </button>
@@ -108,24 +104,15 @@ export default function Reports() {
           <ReportCard icon={ShieldAlert} label="Revoked" value={revoked} tone="red" />
         </section>
 
-        <ReportStats
-          totalIssued={totalIssued}
-          valid={valid}
-          revoked={revoked}
-          publicVerifications={0}
-        />
-
         <div className="report-charts-grid">
           <IssuanceTrendChart data={report?.issuanceOverTime ?? []} />
           <StatusBreakdownChart total={totalIssued} valid={valid} expired={expired} revoked={revoked} />
         </div>
 
         <div className="report-charts-grid">
-          <VerificationActivityChart total={0} />
           <TopPrograms programs={topPrograms} />
+          <RecentReportActivity activities={recentActivities} />
         </div>
-
-        <RecentReportActivity activities={recentActivities} />
 
         <footer className="dashboard-footer">
           <span>© 2026 Verixa. All rights reserved.</span>
@@ -155,7 +142,7 @@ function ReportCard({
       <div>
         <small>{label}</small>
         <b>{value}</b>
-        <span className={`stat-detail ${tone}`}>Loaded from backend</span>
+        <span className={`stat-detail ${tone}`}>{tone === 'blue' ? 'All issued credentials' : tone === 'green' ? 'Ready for verification' : tone === 'orange' ? 'Past expiration date' : 'Revocation history retained'}</span>
       </div>
     </article>
   )

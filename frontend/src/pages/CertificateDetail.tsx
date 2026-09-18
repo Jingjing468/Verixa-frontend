@@ -23,16 +23,16 @@ const mapCertificateDetail = (response: CertificateDetailResponse): CertificateD
   issueDate: response.certificate.issueDate,
   expirationDate: response.certificate.expiryDate ?? 'No expiry',
   status: response.certificate.status,
-  blockchainVerified: true,
+  blockchainVerified: Boolean(response.certificate.blockchain),
   title: 'Certificate of Completion',
   issuer: response.certificate.organization.name,
   revocationReason: response.certificate.revocation?.reason,
   blockchain: {
-    network: 'Ethereum Sepolia',
-    transactionHash: 'Available in public verification',
-    blockNumber: 0,
-    certificateHash: 'SHA-256 hash stored by backend',
-    verified: true,
+    network: response.certificate.blockchain?.network ?? 'Not anchored',
+    transactionHash: response.certificate.blockchain?.transactionHash ?? '',
+    blockNumber: response.certificate.blockchain?.blockNumber ?? 0,
+    certificateHash: response.certificate.blockchain?.certificateHash ?? '',
+    verified: Boolean(response.certificate.blockchain),
   },
 })
 
@@ -43,6 +43,7 @@ export default function CertificateDetail() {
   const [revokeOpen, setRevokeOpen] = useState(false)
   const [toast, setToast] = useState('')
   const [error, setError] = useState('')
+  const [sendingEmail, setSendingEmail] = useState(false)
 
   const loadCertificate = () => {
     apiRequest<CertificateDetailResponse>(`/certificates/${id}`, { auth: true })
@@ -80,10 +81,21 @@ export default function CertificateDetail() {
       .catch((requestError) => setError(requestError instanceof Error ? requestError.message : 'Could not download certificate PDF'))
   }
 
-  const sendEmail = () => {
-    apiRequest(`/certificates/${id}/send`, { method: 'POST', auth: true })
-      .then(() => setToast('Certificate email sent'))
-      .catch((requestError) => setError(requestError instanceof Error ? requestError.message : 'Could not send certificate email'))
+  const sendEmail = async () => {
+    if (sendingEmail) return
+    setSendingEmail(true)
+    setError('')
+    setToast('')
+    try {
+      const result = await apiRequest<{ success: boolean; message: string }>(`/certificates/${id}/send`, { method: 'POST', auth: true })
+      if (!result.success) throw new Error(result.message)
+      setToast(`Certificate email sent to ${certificate?.recipientEmail}`)
+      window.setTimeout(() => setToast(''), 5000)
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : 'Could not send certificate email')
+    } finally {
+      setSendingEmail(false)
+    }
   }
 
   const revoke = () => {
@@ -127,13 +139,13 @@ export default function CertificateDetail() {
           <div className="detail-header-actions">
             <CertificateStatusBadge status={certificate.status} />
             <button className="cancel-action" onClick={downloadPdf}><Download size={15} /> Download PDF</button>
-            <button className="issue-action" onClick={sendEmail}><Mail size={15} /> Send Email</button>
+            <button type="button" className="issue-action" onClick={sendEmail} disabled={sendingEmail || certificate.status === 'revoked'} aria-busy={sendingEmail}><Mail size={15} /> {sendingEmail ? 'Sending...' : 'Send Email'}</button>
             <div className="detail-more">
-              <button className="cancel-action more-button" onClick={(event) => { event.stopPropagation(); setActionsOpen(!actionsOpen) }}>
+              <button type="button" className="cancel-action more-button" aria-expanded={actionsOpen} aria-controls="certificate-more-actions" onKeyDown={(event) => { if (event.key === 'Escape') setActionsOpen(false) }} onClick={(event) => { event.stopPropagation(); setActionsOpen(!actionsOpen) }}>
                 <Ellipsis size={17} /> More Actions
               </button>
               {actionsOpen && (
-                <div className="detail-more-menu" onClick={(event) => event.stopPropagation()}>
+                <div id="certificate-more-actions" className="detail-more-menu" onKeyDown={(event) => { if (event.key === 'Escape') { setActionsOpen(false); event.currentTarget.parentElement?.querySelector('button')?.focus() } }} onClick={(event) => event.stopPropagation()}>
                   <Link to={`/certificates/${certificate.id}/edit`}><Pencil size={14} /> Edit Certificate</Link>
                   {!revoked && <button onClick={() => { setActionsOpen(false); setRevokeOpen(true) }}><TriangleAlert size={14} /> Revoke Certificate</button>}
                 </div>

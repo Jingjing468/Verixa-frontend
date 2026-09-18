@@ -1,0 +1,1 @@
+ALTER TABLE certificates ADD COLUMN IF NOT EXISTS design JSONB NOT NULL DEFAULT '{}'::jsonb;

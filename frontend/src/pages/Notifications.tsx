@@ -152,7 +152,7 @@ export default function Notifications() {
                   return (
                     <div
                       key={n.id}
-                      className={`notif-row ${n.unread ? 'unread' : ''}`}
+                      className={`notif-row ${n.unread ? 'unread' : ''} ${activeMenu === n.id ? 'menu-open' : ''}`}
                       style={{ animationDelay: `${i * 40}ms` }}
                       onClick={(e) => e.stopPropagation()}
                     >
@@ -175,6 +175,7 @@ export default function Notifications() {
                           className="notif-menu-trigger"
                           onClick={() => setActiveMenu(activeMenu === n.id ? null : n.id)}
                           aria-label="Notification actions"
+                          aria-expanded={activeMenu === n.id}
                         >
                           <Ellipsis size={16} />
                         </button>

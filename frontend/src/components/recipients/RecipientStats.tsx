@@ -12,9 +12,9 @@ export default function RecipientStats({
   recipientsThisMonth,
 }: Props) {
   const stats = [
-    { label: 'Total Recipients', value: String(totalRecipients), icon: UsersRound, tone: 'blue', detail: 'Loaded from backend' },
-    { label: 'Active Certificates', value: String(activeCertificates), icon: FileCheck2, tone: 'green', detail: 'From recipient certificate counts' },
-    { label: 'Recipients This Month', value: String(recipientsThisMonth), icon: TrendingUp, tone: 'orange', detail: 'Created this month' },
+    { label: 'Total Recipients', value: String(totalRecipients), icon: UsersRound, tone: 'blue', detail: 'People in your organization' },
+    { label: 'Active Certificates', value: String(activeCertificates), icon: FileCheck2, tone: 'green', detail: 'Currently valid credentials' },
+    { label: 'Recipients This Month', value: String(recipientsThisMonth), icon: TrendingUp, tone: 'orange', detail: 'New recipients added this month' },
   ]
 
   return (

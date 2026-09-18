@@ -42,6 +42,10 @@ export type NotificationRow = {
 };
 
 export type ProfileRow = {
+  certificates_issued: number;
+  certificates_revoked: number;
+  certificates_active: number;
+  avatar_url: string | null;
   id: string;
   full_name: string;
   email: string;
@@ -298,6 +302,10 @@ export const getProfile = async (userId: string): Promise<ProfileRow | null> => 
     `
       SELECT
         u.id,
+        (SELECT COUNT(*)::int FROM certificates c WHERE c.issued_by = u.id AND c.organization_id = u.organization_id) AS certificates_issued,
+        (SELECT COUNT(*)::int FROM certificates c WHERE c.issued_by = u.id AND c.organization_id = u.organization_id AND c.status = 'revoked') AS certificates_revoked,
+        (SELECT COUNT(*)::int FROM certificates c WHERE c.issued_by = u.id AND c.organization_id = u.organization_id AND c.status = 'valid' AND (c.expiry_date IS NULL OR c.expiry_date >= CURRENT_DATE)) AS certificates_active,
+        u.avatar_url,
         u.full_name,
         u.email,
         u.role,
@@ -318,12 +326,14 @@ export const getProfile = async (userId: string): Promise<ProfileRow | null> => 
 
 export const updateUserFullName = async (
   userId: string,
-  fullName: string
+  fullName: string,
+  avatarUrl?: string | null
 ): Promise<ProfileRow | null> => {
   await pool.query("UPDATE users SET full_name = $2, updated_at = NOW() WHERE id = $1", [
     userId,
     fullName,
   ]);
+  if (avatarUrl !== undefined) await pool.query('UPDATE users SET avatar_url=$2 WHERE id=$1', [userId, avatarUrl]);
   return getProfile(userId);
 };
 

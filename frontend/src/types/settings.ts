@@ -49,7 +49,6 @@ export interface Preferences {
   timezone: string
   dateFormat: string
   itemsPerPage: number
-  theme: 'light' | 'system' | 'dark'
 }
 
 export type SettingsSection =

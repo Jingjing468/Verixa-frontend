@@ -22,7 +22,7 @@ export default function StatusBreakdownChart({ total, valid, expired, revoked }:
     <article className="report-chart-card status-chart-card">
       <div className="report-chart-header">
         <div>
-          <h2>Certificate Status Breakdown</h2>
+          <h2>Certificate health</h2>
           <p>Current status distribution of all issued certificates.</p>
         </div>
       </div>
@@ -37,7 +37,7 @@ export default function StatusBreakdownChart({ total, valid, expired, revoked }:
         >
           <div className="report-donut-center">
             <strong>{total.toLocaleString()}</strong>
-            <span>Total</span>
+            <span>certificates</span>
           </div>
         </div>
         <div className="donut-legend">

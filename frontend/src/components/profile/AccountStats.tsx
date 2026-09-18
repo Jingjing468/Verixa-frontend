@@ -1,15 +1,16 @@
-import { FileCheck2, FileX2, Clock } from 'lucide-react'
+import { FileCheck2, FileX2, ShieldCheck } from 'lucide-react'
 
-export default function AccountStats() {
-  const stats = [
-    { label: 'Certificates Issued', value: '328', icon: FileCheck2, tone: 'blue' },
-    { label: 'Certificates Revoked', value: '12', icon: FileX2, tone: 'red' },
-    { label: 'Last Login', value: 'Today, 9:42 AM', icon: Clock, tone: 'green' },
+export default function AccountStats({ stats, error }: { stats: { issued: number; revoked: number; active: number } | null; error: boolean }) {
+  const value = (count?: number) => count === undefined ? (error ? 'Unavailable' : '…') : count.toLocaleString()
+  const cards = [
+    { label: 'Certificates Issued', value: value(stats?.issued), icon: FileCheck2, tone: 'blue' },
+    { label: 'Certificates Revoked', value: value(stats?.revoked), icon: FileX2, tone: 'red' },
+    { label: 'Active Certificates', value: value(stats?.active), icon: ShieldCheck, tone: 'green' },
   ]
 
   return (
     <section className="profile-stats">
-      {stats.map((s, i) => {
+      {cards.map((s, i) => {
         const Icon = s.icon
         return (
           <article key={s.label} className="profile-stat-card" style={{ animationDelay: `${i * 70}ms` }}>

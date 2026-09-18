@@ -15,7 +15,12 @@ export default function ProfileHero({ user, onEdit, avatarUrl, onAvatarChange }:
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
+    e.target.value = ''
     if (!file) return
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type) || file.size > 2 * 1024 * 1024) {
+      window.alert('Choose a PNG, JPG or WebP image up to 2MB.')
+      return
+    }
     const reader = new FileReader()
     reader.onload = () => {
       if (typeof reader.result === 'string') onAvatarChange(reader.result)
@@ -36,7 +41,7 @@ export default function ProfileHero({ user, onEdit, avatarUrl, onAvatarChange }:
           <button className="profile-avatar-btn" aria-label="Change photo" onClick={() => fileRef.current?.click()}>
             <Camera size={14} />
           </button>
-          <input ref={fileRef} type="file" accept="image/*" className="profile-avatar-input" onChange={handleFile} />
+          <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" className="profile-avatar-input" onChange={handleFile} />
         </div>
       </div>
       <div className="profile-hero-center">

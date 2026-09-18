@@ -38,10 +38,8 @@ function isActive(pathname: string, item: SidebarItem) {
 }
 
 function Sidebar({ open, onClose, unreadNotifications }: SidebarProps) {
-  const { pathname } = useLocation()
-  // Handle query params for revoked filter
-  const fullSearch = typeof window !== 'undefined' ? window.location.search : ''
-  const currentPath = pathname + fullSearch
+  const { pathname, search } = useLocation()
+  const revokedList = pathname === '/certificates' && new URLSearchParams(search).get('status') === 'revoked'
 
   return (
     <>
@@ -62,12 +60,15 @@ function Sidebar({ open, onClose, unreadNotifications }: SidebarProps) {
           {items.map((item) => {
             const Icon = item.icon
             const active = item.path.includes('?')
-              ? currentPath === item.path
-              : isActive(pathname, item)
+              ? revokedList
+              : item.path === '/certificates'
+                ? !revokedList && isActive(pathname, item)
+                : isActive(pathname, item)
             return (
               <Link
                 to={item.path}
                 className={active ? 'active' : ''}
+                aria-current={active ? 'page' : undefined}
                 key={item.label}
                 onClick={onClose}
               >
