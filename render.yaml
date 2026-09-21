@@ -1,0 +1,55 @@
+services:
+  - type: web
+    name: verixa-backend
+    runtime: node
+    rootDir: backend
+    plan: free
+    buildCommand: npm ci && npm run build
+    preDeployCommand: npm run migrate
+    startCommand: npm start
+    healthCheckPath: /api/v1/health
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: verixa-db
+          property: connectionString
+      - key: DB_SSL
+        value: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 1h
+      - key: PUBLIC_FRONTEND_URL
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: 587
+      - key: SMTP_SECURE
+        value: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      - key: BLOCKCHAIN_ENABLED
+        value: false
+      - key: SEPOLIA_RPC_URL
+        sync: false
+      - key: BLOCKCHAIN_PRIVATE_KEY
+        sync: false
+      - key: VERIXA_CONTRACT_ADDRESS
+        sync: false
+
+databases:
+  - name: verixa-db
+    plan: free
+    databaseName: verixa
+    user: verixa_user
+    postgresMajorVersion: "17"

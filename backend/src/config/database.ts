@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { Pool } from "pg";
+import { Pool, type PoolConfig } from "pg";
 
 const configDirectory = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(configDirectory, "../..", ".env") });
@@ -36,13 +36,27 @@ const parseDatabasePort = (value: string): number => {
   return port;
 };
 
-export const pool = new Pool({
-  host: getRequiredEnv("DB_HOST"),
-  port: parseDatabasePort(getRequiredEnv("DB_PORT")),
-  database: getRequiredEnv("DB_NAME"),
-  user: getRequiredEnv("DB_USER"),
-  password: getRequiredEnv("DB_PASSWORD"),
-});
+const getPoolConfig = (): PoolConfig => {
+  const ssl = process.env.DB_SSL === "true" ? { rejectUnauthorized: false } : undefined;
+
+  if (process.env.DATABASE_URL) {
+    return {
+      connectionString: process.env.DATABASE_URL,
+      ssl,
+    };
+  }
+
+  return {
+    host: getRequiredEnv("DB_HOST"),
+    port: parseDatabasePort(getRequiredEnv("DB_PORT")),
+    database: getRequiredEnv("DB_NAME"),
+    user: getRequiredEnv("DB_USER"),
+    password: getRequiredEnv("DB_PASSWORD"),
+    ssl,
+  };
+};
+
+export const pool = new Pool(getPoolConfig());
 
 export const testDatabaseConnection = async (): Promise<void> => {
   const client = await pool.connect();
