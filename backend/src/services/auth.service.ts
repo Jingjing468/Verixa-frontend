@@ -38,6 +38,13 @@ type LoginInput = {
   password: string;
 };
 
+type GoogleTokenInfo = {
+  aud?: string;
+  email?: string;
+  email_verified?: string | boolean;
+  name?: string;
+};
+
 type RegisterResult = {
   success: true;
   user: AuthenticatedUser;
@@ -125,6 +132,14 @@ const getJwtConfig = (): { secret: string; expiresIn: jwt.SignOptions["expiresIn
     secret,
     expiresIn: expiresIn as jwt.SignOptions["expiresIn"],
   };
+};
+
+const signAuthToken = (user: AuthenticatedUser): string => {
+  const jwtConfig = getJwtConfig();
+
+  return jwt.sign(user satisfies JwtUserPayload, jwtConfig.secret, {
+    expiresIn: jwtConfig.expiresIn,
+  });
 };
 
 const toAuthenticatedUser = (user: SafeUserRecord | UserRecord): AuthenticatedUser => ({
@@ -231,14 +246,63 @@ export const loginUser = async (body: unknown): Promise<LoginResult> => {
   }
 
   const authenticatedUser = toAuthenticatedUser(user);
-  const jwtConfig = getJwtConfig();
-  const token = jwt.sign(authenticatedUser satisfies JwtUserPayload, jwtConfig.secret, {
-    expiresIn: jwtConfig.expiresIn,
-  });
 
   return {
     success: true,
-    token,
+    token: signAuthToken(authenticatedUser),
+    user: authenticatedUser,
+  };
+};
+
+export const loginWithGoogle = async (body: unknown): Promise<LoginResult> => {
+  if (!isRecord(body)) {
+    throw new HttpError(400, "Request body must be a JSON object");
+  }
+
+  const credential = getRequiredString(body, "credential");
+  const googleClientId = process.env.GOOGLE_CLIENT_ID;
+
+  if (!googleClientId) {
+    throw new HttpError(500, "GOOGLE_CLIENT_ID environment variable is required");
+  }
+
+  const tokenInfoResponse = await fetch(
+    `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`
+  );
+
+  if (!tokenInfoResponse.ok) {
+    throw new HttpError(401, "Invalid Google sign-in token");
+  }
+
+  const tokenInfo = (await tokenInfoResponse.json()) as GoogleTokenInfo;
+
+  if (tokenInfo.aud !== googleClientId) {
+    throw new HttpError(401, "Google sign-in token was issued for a different app");
+  }
+
+  if (tokenInfo.email_verified !== true && tokenInfo.email_verified !== "true") {
+    throw new HttpError(401, "Google account email is not verified");
+  }
+
+  if (!tokenInfo.email || !isValidEmail(tokenInfo.email)) {
+    throw new HttpError(401, "Google account did not provide a valid email");
+  }
+
+  const user = await findUserByEmail(normalizeEmail(tokenInfo.email));
+
+  if (!user) {
+    throw new HttpError(404, "No Verixa account found for this Google email");
+  }
+
+  if (!user.is_active) {
+    throw new HttpError(403, "Account is inactive");
+  }
+
+  const authenticatedUser = toAuthenticatedUser(user);
+
+  return {
+    success: true,
+    token: signAuthToken(authenticatedUser),
     user: authenticatedUser,
   };
 };

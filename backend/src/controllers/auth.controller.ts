@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { HttpError } from "../utils/http-error.js";
 import {
   getCurrentUser,
+  loginWithGoogle,
   loginUser,
   registerOrganization,
 } from "../services/auth.service.js";
@@ -36,6 +37,16 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
     const result = await loginUser(req.body as unknown);
+
+    res.status(200).json(result);
+  } catch (error: unknown) {
+    sendErrorResponse(res, error);
+  }
+};
+
+export const googleLogin = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const result = await loginWithGoogle(req.body as unknown);
 
     res.status(200).json(result);
   } catch (error: unknown) {

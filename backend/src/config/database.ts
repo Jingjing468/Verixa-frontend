@@ -1,7 +1,10 @@
 import dotenv from "dotenv";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { Pool } from "pg";
 
-dotenv.config();
+const configDirectory = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.resolve(configDirectory, "../..", ".env") });
 
 const requiredDatabaseEnvVars = [
   "DB_HOST",

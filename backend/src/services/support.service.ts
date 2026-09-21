@@ -28,9 +28,30 @@ import { getRequiredString, isRecord, isValidEmail } from "../utils/validation.j
 const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const statuses = new Set(["valid", "expired", "revoked"]);
+const smtpEnvVars = ["SMTP_USER", "SMTP_PASS"];
 
 const toNumber = (value: string): number => Number(value);
 const hashToken = (token: string): string => createHash("sha256").update(token).digest("hex");
+const getMissingSmtpEnvVars = (): string[] => smtpEnvVars.filter((name) => !process.env[name]);
+const getEmailDeliveryMessage = (error: unknown): string => {
+  if (!isRecord(error)) {
+    return "Unable to send reset email right now. Please try again later.";
+  }
+
+  const details = [error.message, error.response, error.code]
+    .filter((value): value is string => typeof value === "string")
+    .join(" ");
+
+  if (details.includes("Application-specific password required") || details.includes("534-5.7.9")) {
+    return "Gmail rejected the sender login. Use a Gmail App Password for SMTP_PASS, not your normal Gmail password.";
+  }
+
+  if (details.includes("Username and Password not accepted") || details.includes("535-5.7.8")) {
+    return "Gmail rejected the sender login. Check SMTP_USER and the Gmail App Password in SMTP_PASS.";
+  }
+
+  return "Unable to send reset email right now. Please try again later.";
+};
 
 const isValidDateString = (value: string): boolean => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
@@ -240,6 +261,7 @@ export const forgotPassword = async (body: unknown) => {
     throw new HttpError(503, "Password reset email is unavailable. Please contact support.");
   }
   const user = await findUserByEmail(email);
+
   if (user) {
     const token = randomBytes(32).toString("hex");
     await createPasswordResetToken(
@@ -247,17 +269,29 @@ export const forgotPassword = async (body: unknown) => {
       hashToken(token),
       new Date(Date.now() + 60 * 60 * 1000)
     );
+
     try {
       await sendPasswordResetEmail({
         recipientEmail: user.email,
         resetToken: token,
       });
     } catch (error: unknown) {
+      const missingSmtpEnvVars = getMissingSmtpEnvVars();
       console.error(
         "Password reset email delivery failed:",
         error instanceof Error ? error.message : "Unknown error"
       );
+<<<<<<< Updated upstream
       throw new HttpError(503, "Could not send the reset email. Please try again later.");
+=======
+      if (missingSmtpEnvVars.length > 0) {
+        throw new HttpError(
+          503,
+          `Email service is not configured. Missing: ${missingSmtpEnvVars.join(", ")}`
+        );
+      }
+      throw new HttpError(503, getEmailDeliveryMessage(error));
+>>>>>>> Stashed changes
     }
   }
   return { success: true, message: "If the email exists, password reset instructions will be sent" };

@@ -110,6 +110,9 @@ export const sendCertificateDeliveryEmail = async (
   };
 };
 
+export const buildPasswordResetUrl = (resetToken: string): string =>
+  `${getPublicFrontendUrl()}/reset-password?token=${encodeURIComponent(resetToken)}`;
+
 export const sendPasswordResetEmail = async (
   email: PasswordResetEmail,
   transporter: EmailTransporter = createEmailTransporter(),
@@ -118,9 +121,7 @@ export const sendPasswordResetEmail = async (
   const emailConfig = config ?? {
     from: process.env.EMAIL_FROM ?? "Verixa <no-reply@example.com>",
   };
-  const resetUrl = `${getPublicFrontendUrl()}/reset-password?token=${encodeURIComponent(
-    email.resetToken
-  )}`;
+  const resetUrl = buildPasswordResetUrl(email.resetToken);
 
   const result = await transporter.sendMail({
     from: emailConfig.from,
