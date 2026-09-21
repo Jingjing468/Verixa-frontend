@@ -4,8 +4,8 @@ services:
     runtime: node
     rootDir: backend
     plan: free
-    buildCommand: npm ci && npm run build
-    startCommand: npm run migrate && npm start
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: node dist/scripts/migrate.js && npm start
     healthCheckPath: /api/v1/health
     autoDeployTrigger: commit
     envVars:
