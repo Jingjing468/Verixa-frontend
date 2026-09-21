@@ -281,6 +281,8 @@ const createNotificationSafely = async (input: Parameters<typeof createNotificat
   }
 };
 
+const isBlockchainIssuanceEnabled = (): boolean => process.env.BLOCKCHAIN_ENABLED === "true";
+
 export const regenerateCertificatePdf = async (
   organizationId: string,
   id: string
@@ -391,21 +393,20 @@ export const addCertificate = async (
 
   const warnings: string[] = [];
   try {
-    if (process.env.BLOCKCHAIN_ENABLED !== "false") {
-    const blockchainResult = await createBlockchainService().issueCertificateOnChain(
-      createdCertificate.certificate_id,
-      createdCertificateHash
-    );
+    if (isBlockchainIssuanceEnabled()) {
+      const blockchainResult = await createBlockchainService().issueCertificateOnChain(
+        createdCertificate.certificate_id,
+        createdCertificateHash
+      );
 
-    await createBlockchainRecord({
-      certificateDatabaseId: createdCertificate.id,
-      network: blockchainResult.network,
-      transactionHash: blockchainResult.transactionHash,
-      blockNumber: blockchainResult.blockNumber,
-      contractAddress: blockchainResult.contractAddress,
-      certificateHash: createdCertificateHash,
-    });
-
+      await createBlockchainRecord({
+        certificateDatabaseId: createdCertificate.id,
+        network: blockchainResult.network,
+        transactionHash: blockchainResult.transactionHash,
+        blockNumber: blockchainResult.blockNumber,
+        contractAddress: blockchainResult.contractAddress,
+        certificateHash: createdCertificateHash,
+      });
     } else {
       warnings.push("Certificate created without blockchain anchoring.");
     }
@@ -420,8 +421,8 @@ export const addCertificate = async (
   } catch (error: unknown) {
     throw new HttpError(
       502,
-      `Certificate was saved, but blockchain anchoring or PDF generation failed: ${
-        error instanceof Error ? error.message : "Unknown blockchain error"
+      `Certificate was saved, but PDF generation failed: ${
+        error instanceof Error ? error.message : "Unknown PDF error"
       }`
     );
   }

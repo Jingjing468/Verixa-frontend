@@ -281,9 +281,6 @@ export const forgotPassword = async (body: unknown) => {
         "Password reset email delivery failed:",
         error instanceof Error ? error.message : "Unknown error"
       );
-<<<<<<< Updated upstream
-      throw new HttpError(503, "Could not send the reset email. Please try again later.");
-=======
       if (missingSmtpEnvVars.length > 0) {
         throw new HttpError(
           503,
@@ -291,7 +288,6 @@ export const forgotPassword = async (body: unknown) => {
         );
       }
       throw new HttpError(503, getEmailDeliveryMessage(error));
->>>>>>> Stashed changes
     }
   }
   return { success: true, message: "If the email exists, password reset instructions will be sent" };

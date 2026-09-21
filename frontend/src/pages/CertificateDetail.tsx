@@ -56,7 +56,9 @@ export default function CertificateDetail() {
   }, [id])
 
   const copy = (text: string, message: string) => {
-    navigator.clipboard?.writeText(text)
+    if (text) {
+      navigator.clipboard?.writeText(text)
+    }
     setToast(message)
     window.setTimeout(() => setToast(''), 1800)
   }
@@ -162,7 +164,7 @@ export default function CertificateDetail() {
           <section className="detail-side">
             <CertificateInfoCard certificate={certificate} onCopy={copy} />
             <BlockchainVerificationCard blockchain={certificate.blockchain} onCopy={copy} />
-            <CertificateTimeline status={certificate.status} issueDate={certificate.issueDate} />
+            <CertificateTimeline status={certificate.status} issueDate={certificate.issueDate} blockchainVerified={certificate.blockchainVerified} />
             <RecipientCard name={certificate.recipientName} email={certificate.recipientEmail} onCopy={copy} />
             <CertificateQuickActions certificateId={certificate.id} status={certificate.status} onCopy={copy} onRevoke={() => setRevokeOpen(true)} />
           </section>

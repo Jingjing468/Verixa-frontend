@@ -53,7 +53,7 @@ export default function CertificateDetailPreview({ certificate }: Props) {
             <small>VERIFIED CREDENTIAL</small>
           </div>
           <span className="detail-cert-verified">
-            <ShieldCheck size={15} /> Blockchain verified
+            <ShieldCheck size={15} /> {certificate.blockchainVerified ? 'Blockchain verified' : 'Credential issued'}
           </span>
         </div>
 

@@ -7,6 +7,9 @@ interface Props {
 }
 
 export default function BlockchainVerificationCard({ blockchain, onCopy }: Props) {
+  const hasTransaction = blockchain.verified && /^0x[0-9a-fA-F]{64}$/.test(blockchain.transactionHash)
+  const hasCertificateHash = blockchain.certificateHash.length > 0
+
   return (
     <article className="detail-card blockchain-card">
       <div className="blockchain-heading">
@@ -30,10 +33,12 @@ export default function BlockchainVerificationCard({ blockchain, onCopy }: Props
         </div>
         <div>
           <small>Transaction Hash</small>
-          <b>{blockchain.transactionHash}</b>
-          <button onClick={() => onCopy(blockchain.transactionHash, 'Transaction hash copied')} aria-label="Copy transaction hash">
-            <Copy size={13} />
-          </button>
+          <b>{blockchain.transactionHash || 'Not available'}</b>
+          {hasTransaction && (
+            <button onClick={() => onCopy(blockchain.transactionHash, 'Transaction hash copied')} aria-label="Copy transaction hash">
+              <Copy size={13} />
+            </button>
+          )}
         </div>
         <div>
           <small>Block Number</small>
@@ -46,10 +51,12 @@ export default function BlockchainVerificationCard({ blockchain, onCopy }: Props
             Certificate Hash
             <em>Used to confirm that the certificate data has not been modified.</em>
           </small>
-          <b>{blockchain.certificateHash}</b>
-          <button onClick={() => onCopy(blockchain.certificateHash, 'Certificate hash copied')} aria-label="Copy certificate hash">
-            <Copy size={13} />
-          </button>
+          <b>{blockchain.certificateHash || 'Not available'}</b>
+          {hasCertificateHash && (
+            <button onClick={() => onCopy(blockchain.certificateHash, 'Certificate hash copied')} aria-label="Copy certificate hash">
+              <Copy size={13} />
+            </button>
+          )}
         </div>
         <div>
           <small>Verification Status</small>
@@ -59,9 +66,18 @@ export default function BlockchainVerificationCard({ blockchain, onCopy }: Props
         </div>
       </div>
 
-      {blockchain.verified && /^0x[0-9a-fA-F]{64}$/.test(blockchain.transactionHash) ? (
+      {hasTransaction ? (
         <a className="blockchain-button" href={`https://sepolia.etherscan.io/tx/${blockchain.transactionHash}`} target="_blank" rel="noopener noreferrer"><ArrowUpRight size={15} /> View Transaction</a>
-      ) : <button className="blockchain-button" disabled title="This certificate has no blockchain transaction">No transaction available</button>}
+      ) : (
+        <button
+          className="blockchain-button"
+          type="button"
+          title="This certificate was issued without blockchain anchoring"
+          onClick={() => onCopy('', 'No blockchain transaction is available for this certificate.')}
+        >
+          No transaction available
+        </button>
+      )}
     </article>
   )
 }

@@ -3,6 +3,7 @@ import type { CertificateStatus } from '../../types/certificate'
 interface Props {
   status: CertificateStatus
   issueDate: string
+  blockchainVerified: boolean
 }
 
 interface TimelineEvent {
@@ -11,10 +12,13 @@ interface TimelineEvent {
   current?: boolean
 }
 
-export default function CertificateTimeline({ status, issueDate }: Props) {
+export default function CertificateTimeline({ status, issueDate, blockchainVerified }: Props) {
   const events: TimelineEvent[] = [
     { date: issueDate, label: 'Certificate Created' },
-    { date: issueDate, label: 'Recorded on Blockchain' },
+    {
+      date: blockchainVerified ? issueDate : 'Not anchored',
+      label: blockchainVerified ? 'Recorded on Blockchain' : 'Issued without Blockchain Anchor',
+    },
     { date: issueDate, label: 'Email Sent to Recipient' },
     {
       date: 'Current',

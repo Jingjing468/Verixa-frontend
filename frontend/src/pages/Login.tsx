@@ -1,10 +1,5 @@
-<<<<<<< Updated upstream
-import { useState } from 'react'
-import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail } from 'lucide-react'
-=======
 import { useEffect, useRef, useState } from 'react'
-import { ArrowRight, EyeOff, LockKeyhole, Mail } from 'lucide-react'
->>>>>>> Stashed changes
+import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import AuthLayout from '../components/AuthLayout'
 import googleIcon from '../assets/googleicon.png'
