@@ -1,15 +1,12 @@
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { pool } from "../config/database.js";
 
 type MigrationRow = {
   name: string;
 };
 
-const currentFilePath = fileURLToPath(import.meta.url);
-const currentDir = path.dirname(currentFilePath);
-const migrationsDir = path.resolve(currentDir, "../migrations");
+const migrationsDir = path.resolve(process.cwd(), "src/migrations");
 
 const ensureMigrationsTable = async (): Promise<void> => {
   await pool.query("CREATE EXTENSION IF NOT EXISTS pgcrypto");
