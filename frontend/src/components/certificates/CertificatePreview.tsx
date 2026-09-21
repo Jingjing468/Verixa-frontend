@@ -1,0 +1,9 @@
+import { QrCode, ShieldCheck } from 'lucide-react'
+import verixaLogo from '../../assets/verixaicon.png'
+import type { CertificateFormData } from '../../types/certificate'
+
+const formatDate = (date: string) => date ? new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).format(new Date(`${date}T00:00:00`)) : 'August 20, 2026'
+export default function CertificatePreview({ form, compact = false }: { form: CertificateFormData; compact?: boolean }) {
+  const recipient = form.recipient.name || 'Lim Potkolbotey'
+  return <div className={`certificate-preview ${form.template} accent-${form.accent} ${compact ? 'compact' : ''}`}><div className="preview-corner corner-one" /><div className="preview-corner corner-two" /><header>{form.organizationLogo && <img src={form.organizationLogo} alt="Organization logo" className="certificate-organization-logo" />}<div className="preview-brand"><img src={verixaLogo} alt="Verixa" /><small>VERIFIED CREDENTIAL</small></div><span className="preview-verified"><ShieldCheck size={compact ? 12 : 15} /> Verified</span></header><main><p>Certificate of achievement</p><h2>{form.certificateTitle || 'Certificate of Completion'}</h2><span>This certifies that</span><h3>{recipient}</h3><span>has successfully completed</span><h4>{form.program || 'Blockchain Development'}</h4></main><footer><div><small>Issued by</small><b>{form.organizationName || form.recipient.organization || 'Kirirom Institute of Technology'}</b></div><div><small>Issue date</small><b>{formatDate(form.issueDate)}</b></div>{form.signature && <div className="preview-signature"><img src={form.signature} alt="Authorized signature" /><b>{form.signerName}</b><small>{form.signerTitle}</small></div>}<div className="preview-qr"><QrCode size={compact ? 24 : 32} /><small>VER-2026-0001249</small></div></footer></div>
+}
