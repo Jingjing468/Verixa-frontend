@@ -40,6 +40,7 @@ export default function CertificateList() {
       .then((response) => {
         setCertificates(response.data.map((certificate) => ({
           id: certificate.id,
+          certificateId: certificate.certificateId,
           recipientName: certificate.recipient.fullName,
           recipientEmail: certificate.recipient.email,
           course: certificate.courseName,
@@ -113,7 +114,7 @@ export default function CertificateList() {
         const objectUrl = URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = objectUrl
-        link.download = `${certificate.id}.pdf`
+        link.download = `${certificate.certificateId}.pdf`
         link.click()
         URL.revokeObjectURL(objectUrl)
       })
@@ -213,8 +214,8 @@ export default function CertificateList() {
                 <tbody>
                   {filtered.map((certificate, index) => (
                     <tr className={selected.includes(certificate.id) ? 'selected' : ''} style={{ animationDelay: `${index * 35}ms` }} key={certificate.id}>
-                      <td><input type="checkbox" aria-label={`Select ${certificate.id}`} checked={selected.includes(certificate.id)} onChange={() => toggle(certificate.id)} /></td>
-                      <td><Link className="certificate-id" to={`/certificates/${certificate.id}`}>{certificate.id}</Link></td>
+                      <td><input type="checkbox" aria-label={`Select ${certificate.certificateId}`} checked={selected.includes(certificate.id)} onChange={() => toggle(certificate.id)} /></td>
+                      <td><Link className="certificate-id" to={`/certificates/${certificate.id}`}>{certificate.certificateId}</Link></td>
                       <td>
                         <Link className="recipient-cell" to={`/certificates/${certificate.id}`}>
                           <span>{initials(certificate.recipientName)}</span>
@@ -234,7 +235,7 @@ export default function CertificateList() {
                             const bounds = event.currentTarget.getBoundingClientRect()
                             setActionMenu((current) => current?.certificate.id === certificate.id ? null : { certificate, top: bounds.bottom + 7, right: window.innerWidth - bounds.right })
                           }}
-                          aria-label={`Actions for ${certificate.id}`}
+                          aria-label={`Actions for ${certificate.certificateId}`}
                         >
                           <Ellipsis size={18} />
                         </button>

@@ -1,5 +1,6 @@
 import { Camera, ScanLine, Upload } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+import jsQR from 'jsqr'
 
 type DetectedBarcode = {
   rawValue: string
@@ -24,9 +25,10 @@ function QrScanner({ onScan }: Props) {
   const streamRef = useRef<MediaStream | null>(null)
   const animationRef = useRef<number | null>(null)
   const detectorRef = useRef<InstanceType<BarcodeDetectorConstructor> | null>(null)
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const [status, setStatus] = useState('Scan a certificate QR code or upload a QR image.')
   const [cameraActive, setCameraActive] = useState(false)
-  const supported = typeof window !== 'undefined' && 'BarcodeDetector' in window
+  const nativeSupported = typeof window !== 'undefined' && 'BarcodeDetector' in window
 
   const stopCamera = () => {
     if (animationRef.current !== null) {
@@ -49,6 +51,39 @@ function QrScanner({ onScan }: Props) {
     return detectorRef.current
   }
 
+  const decodeWithCanvas = (source: CanvasImageSource, width: number, height: number) => {
+    if (width <= 0 || height <= 0) return null
+
+    const canvas = canvasRef.current ?? document.createElement('canvas')
+    canvasRef.current = canvas
+    canvas.width = width
+    canvas.height = height
+
+    const context = canvas.getContext('2d', { willReadFrequently: true })
+    if (!context) return null
+
+    context.drawImage(source, 0, 0, width, height)
+    const imageData = context.getImageData(0, 0, width, height)
+    return jsQR(imageData.data, imageData.width, imageData.height)?.data ?? null
+  }
+
+  const detectQrValue = async (source: CanvasImageSource, width: number, height: number) => {
+    const currentDetector = detector()
+
+    if (currentDetector) {
+      try {
+        const codes = await currentDetector.detect(source)
+        const nativeValue = codes[0]?.rawValue?.trim()
+
+        if (nativeValue) return nativeValue
+      } catch {
+        // Fall through to jsQR. Some browsers expose BarcodeDetector but fail on video frames.
+      }
+    }
+
+    return decodeWithCanvas(source, width, height)
+  }
+
   const handleDecodedValue = (value: string) => {
     const trimmedValue = value.trim()
 
@@ -60,17 +95,15 @@ function QrScanner({ onScan }: Props) {
   }
 
   const scanFrame = async () => {
-    const currentDetector = detector()
     const video = videoRef.current
 
-    if (!currentDetector || !video || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
+    if (!video || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
       animationRef.current = requestAnimationFrame(scanFrame)
       return
     }
 
     try {
-      const codes = await currentDetector.detect(video)
-      const value = codes[0]?.rawValue
+      const value = await detectQrValue(video, video.videoWidth, video.videoHeight)
 
       if (value) {
         handleDecodedValue(value)
@@ -84,13 +117,6 @@ function QrScanner({ onScan }: Props) {
   }
 
   const startCamera = async () => {
-    const currentDetector = detector()
-
-    if (!currentDetector) {
-      setStatus('QR scanning is not supported in this browser. Upload an image or enter the certificate ID.')
-      return
-    }
-
     try {
       stopCamera()
       setStatus('Starting camera...')
@@ -115,21 +141,13 @@ function QrScanner({ onScan }: Props) {
   }
 
   const uploadQrImage = async (file: File | undefined) => {
-    const currentDetector = detector()
-
     if (!file) return
-
-    if (!currentDetector) {
-      setStatus('QR image scanning is not supported in this browser. Enter the certificate ID instead.')
-      return
-    }
 
     try {
       setStatus('Reading QR image...')
       const bitmap = await createImageBitmap(file)
-      const codes = await currentDetector.detect(bitmap)
+      const value = await detectQrValue(bitmap, bitmap.width, bitmap.height)
       bitmap.close()
-      const value = codes[0]?.rawValue
 
       if (!value) {
         setStatus('No QR code found in that image. Try a clearer image.')
@@ -160,10 +178,10 @@ function QrScanner({ onScan }: Props) {
         </div>
       </div>
       <p className="verify-qr-text">
-        {supported ? status : 'QR scanning is not supported in this browser. Enter the certificate ID instead.'}
+        {nativeSupported ? status : `${status} Using browser-compatible QR scanning.`}
       </p>
       <div className="verify-qr-actions">
-        <button className="verify-btn-primary" type="button" onClick={cameraActive ? stopCamera : startCamera} disabled={!supported}>
+        <button className="verify-btn-primary" type="button" onClick={cameraActive ? stopCamera : startCamera}>
           <Camera size={15} />
           {cameraActive ? 'Stop Camera' : 'Use Camera'}
         </button>

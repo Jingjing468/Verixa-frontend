@@ -34,6 +34,13 @@ const escapeHtml = (value: string): string =>
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
 
+const getDefaultEmailFrom = (): string => {
+  if (process.env.EMAIL_FROM) return process.env.EMAIL_FROM;
+  if (process.env.SMTP_USER) return `Verixa <${process.env.SMTP_USER}>`;
+
+  return "Verixa <no-reply@example.com>";
+};
+
 export const createEmailTransporter = (
   config: EmailConfig = getEmailConfig()
 ): EmailTransporter =>
@@ -57,7 +64,7 @@ export const sendCertificateDeliveryEmail = async (
   config?: Pick<EmailConfig, "from">
 ): Promise<EmailSendResult> => {
   const emailConfig = config ?? {
-    from: process.env.EMAIL_FROM ?? "Verixa <no-reply@example.com>",
+    from: getDefaultEmailFrom(),
   };
   const verificationUrl = buildVerificationUrl(email.certificateId);
   const safeRecipientName = escapeHtml(email.recipientName);
@@ -119,7 +126,7 @@ export const sendPasswordResetEmail = async (
   config?: Pick<EmailConfig, "from">
 ): Promise<EmailSendResult> => {
   const emailConfig = config ?? {
-    from: process.env.EMAIL_FROM ?? "Verixa <no-reply@example.com>",
+    from: getDefaultEmailFrom(),
   };
   const resetUrl = buildPasswordResetUrl(email.resetToken);
 

@@ -4,30 +4,45 @@ import type { CertificateStatus } from '../../types/certificate'
 
 interface Props {
   certificateId: string
+  certificateRecordId: string
   status: CertificateStatus
   onCopy: (text: string, message: string) => void
+  onDownload: () => void
+  onSendEmail: () => void
   onRevoke: () => void
+  sendingEmail?: boolean
 }
 
-export default function CertificateQuickActions({ certificateId, status, onCopy, onRevoke }: Props) {
+export default function CertificateQuickActions({
+  certificateId,
+  certificateRecordId,
+  status,
+  onCopy,
+  onDownload,
+  onSendEmail,
+  onRevoke,
+  sendingEmail = false,
+}: Props) {
+  const verificationUrl = `${window.location.origin}/verify/${encodeURIComponent(certificateId)}`
+
   return (
     <article className="detail-card quick-actions">
       <h2>Quick Actions</h2>
       <div>
-        <button>
+        <button type="button" onClick={onDownload}>
           <Download size={16} /> Download PDF
         </button>
-        <button onClick={() => onCopy(`verixa.test/certificates/${certificateId}`, 'Verification link copied')}>
+        <button type="button" onClick={() => onCopy(verificationUrl, 'Verification link copied')}>
           <Link2 size={16} /> Copy Verification Link
         </button>
-        <button>
-          <Mail size={16} /> Send Email
+        <button type="button" onClick={onSendEmail} disabled={sendingEmail || status === 'revoked'}>
+          <Mail size={16} /> {sendingEmail ? 'Sending...' : 'Send Email'}
         </button>
-        <Link to={`/certificates/${certificateId}/edit`}>
+        <Link to={`/certificates/${certificateRecordId}/edit`}>
           <Pencil size={16} /> Edit Certificate
         </Link>
         {status !== 'revoked' && (
-          <button className="quick-revoke" onClick={onRevoke}>
+          <button type="button" className="quick-revoke" onClick={onRevoke}>
             <TriangleAlert size={16} /> Revoke Certificate
           </button>
         )}

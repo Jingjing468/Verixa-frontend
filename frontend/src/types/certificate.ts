@@ -3,6 +3,7 @@ export type AccentStyle = 'blue' | 'violet' | 'emerald'
 export type CertificateStatus = 'valid' | 'expired' | 'revoked'
 export interface Certificate {
   id: string
+  certificateId: string
   recipientName: string
   recipientEmail: string
   course: string

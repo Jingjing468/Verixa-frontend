@@ -17,6 +17,7 @@ import type { CertificateDetailResponse } from '../api/types'
 
 const mapCertificateDetail = (response: CertificateDetailResponse): CertificateDetailType => ({
   id: response.certificate.id,
+  certificateId: response.certificate.certificateId,
   recipientName: response.certificate.recipient.fullName,
   recipientEmail: response.certificate.recipient.email,
   course: response.certificate.courseName,
@@ -77,7 +78,7 @@ export default function CertificateDetail() {
         const objectUrl = URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = objectUrl
-        link.download = `${certificate?.id ?? 'certificate'}.pdf`
+        link.download = `${certificate?.certificateId ?? 'certificate'}.pdf`
         link.click()
         URL.revokeObjectURL(objectUrl)
       })
@@ -135,7 +136,7 @@ export default function CertificateDetail() {
             <Link className="detail-back" to="/certificates">
               <ArrowLeft size={15} /> Back to Certificates
             </Link>
-            <nav>Certificates <span>/</span> {certificate.id}</nav>
+            <nav>Certificates <span>/</span> {certificate.certificateId}</nav>
             <h1>Certificate Details</h1>
             <p>View credential information, verification status, and blockchain proof.</p>
           </div>
@@ -167,7 +168,16 @@ export default function CertificateDetail() {
             <BlockchainVerificationCard blockchain={certificate.blockchain} onCopy={copy} />
             <CertificateTimeline status={certificate.status} issueDate={certificate.issueDate} blockchainVerified={certificate.blockchainVerified} />
             <RecipientCard name={certificate.recipientName} email={certificate.recipientEmail} onCopy={copy} />
-            <CertificateQuickActions certificateId={certificate.id} status={certificate.status} onCopy={copy} onRevoke={() => setRevokeOpen(true)} />
+            <CertificateQuickActions
+              certificateId={certificate.certificateId}
+              certificateRecordId={certificate.id}
+              status={certificate.status}
+              onCopy={copy}
+              onDownload={downloadPdf}
+              onSendEmail={sendEmail}
+              onRevoke={() => setRevokeOpen(true)}
+              sendingEmail={sendingEmail}
+            />
           </section>
         </div>
       </div>

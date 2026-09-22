@@ -9,7 +9,7 @@ interface Props {
 
 export default function CertificateInfoCard({ certificate, onCopy }: Props) {
   const rows: Array<{ label: string; value: string; icon: typeof FileText; copyable?: boolean }> = [
-    { label: 'Certificate ID', value: certificate.id, icon: FileText, copyable: true },
+    { label: 'Certificate ID', value: certificate.certificateId, icon: FileText, copyable: true },
     { label: 'Recipient', value: certificate.recipientName, icon: UserRound },
     { label: 'Recipient Email', value: certificate.recipientEmail, icon: Mail, copyable: true },
     { label: 'Program', value: certificate.course, icon: GraduationCap },

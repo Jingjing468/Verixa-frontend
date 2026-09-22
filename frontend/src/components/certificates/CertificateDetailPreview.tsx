@@ -78,7 +78,7 @@ export default function CertificateDetailPreview({ certificate }: Props) {
             <div className="cert-qr-box">
               <QrCode size={38} />
             </div>
-            <small className="cert-qr-id">{certificate.id}</small>
+            <small className="cert-qr-id">{certificate.certificateId}</small>
           </div>
         </div>
 
@@ -97,7 +97,7 @@ export default function CertificateDetailPreview({ certificate }: Props) {
         {/* Credential ID bar */}
         <div className="detail-cert-id-bar">
           <Award size={13} />
-          <span>Credential ID: {certificate.id}</span>
+          <span>Credential ID: {certificate.certificateId}</span>
         </div>
 
         {/* Status overlay for revoked/expired */}
