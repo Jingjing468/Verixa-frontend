@@ -581,3 +581,6 @@
 .auth-form .field input:autofill{box-shadow:0 0 0 1000px #fbfcff inset;color:#313c50}
 .auth-form .field:focus-within{border-color:#a7b8d5;box-shadow:0 0 0 3px rgba(83,105,142,.06)}
 .recent-certificates-error{display:block;padding:0 24px 12px}
+.verify-qr-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:14px}
+.verify-qr-actions label.verify-btn-secondary{cursor:pointer}
+.verify-qr-actions input[type=file]{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}

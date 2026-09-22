@@ -1,7 +1,7 @@
 import { CreditCard, QrCode } from 'lucide-react'
 import type { VerificationMethod } from '../../types/verification'
 import CertificateIdForm from './CertificateIdForm'
-import QrScannerMock from './QrScannerMock'
+import QrScanner from './QrScanner'
 
 interface Props {
   method: VerificationMethod
@@ -9,6 +9,7 @@ interface Props {
   certificateId: string
   onIdChange: (id: string) => void
   onVerify: () => void
+  onQrScan: (value: string) => void
   error: string | null
 }
 
@@ -18,6 +19,7 @@ function VerificationCard({
   certificateId,
   onIdChange,
   onVerify,
+  onQrScan,
   error,
 }: Props) {
   return (
@@ -48,7 +50,7 @@ function VerificationCard({
               error={error}
             />
           ) : (
-            <QrScannerMock />
+            <QrScanner onScan={onQrScan} />
           )}
         </div>
       </div>

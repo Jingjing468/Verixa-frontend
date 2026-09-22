@@ -10,6 +10,31 @@ import VerificationSteps from '../components/verification/VerificationSteps'
 import VerificationLoading from '../components/verification/VerificationLoading'
 import PublicNavbar from '../components/common/PublicNavbar'
 
+const certificateIdPattern = /^CERT-\d{4}-\d{7}$/i
+
+function extractCertificateId(value: string): string {
+  const trimmed = value.trim()
+
+  if (!trimmed) return ''
+
+  try {
+    const url = new URL(trimmed)
+    const match = url.pathname.match(/\/verify\/([^/?#]+)/i)
+
+    if (match?.[1]) {
+      return decodeURIComponent(match[1]).trim()
+    }
+  } catch {
+    const match = trimmed.match(/\/verify\/([^/?#]+)/i)
+
+    if (match?.[1]) {
+      return decodeURIComponent(match[1]).trim()
+    }
+  }
+
+  return trimmed
+}
+
 function VerifyCertificate() {
   const [method, setMethod] = useState<VerificationMethod>('certificateId')
   const [certificateId, setCertificateId] = useState('')
@@ -23,17 +48,17 @@ function VerifyCertificate() {
     }
   }, [certificateId])
 
-  const handleVerify = useCallback(() => {
+  const handleVerify = useCallback((rawValue = certificateId) => {
     inputTouched.current = true
-    const id = certificateId.trim()
+    const id = extractCertificateId(rawValue)
 
     if (!id) {
-      setError('Please enter a Certificate ID.')
+      setError('Please enter a Certificate ID or verification link.')
       return
     }
 
-    if (!id.startsWith('CERT-')) {
-      setError('Please enter a valid Certificate ID.')
+    if (!certificateIdPattern.test(id)) {
+      setError('Please enter a valid Certificate ID or verification QR link.')
       return
     }
 
@@ -42,9 +67,14 @@ function VerifyCertificate() {
 
     setTimeout(() => {
       setLoading(false)
-      window.location.href = `/verify/${id}`
+      window.location.href = `/verify/${encodeURIComponent(id.toUpperCase())}`
     }, 800)
   }, [certificateId])
+
+  const handleQrScan = useCallback((value: string) => {
+    setCertificateId(value)
+    handleVerify(value)
+  }, [handleVerify])
 
   return (
     <main className="verify-page">
@@ -58,6 +88,7 @@ function VerifyCertificate() {
           certificateId={certificateId}
           onIdChange={setCertificateId}
           onVerify={handleVerify}
+          onQrScan={handleQrScan}
           error={error}
         />
         <CertificateExample />
