@@ -1,6 +1,10 @@
 import nodemailer, { type SendMailOptions } from "nodemailer";
 import { setDefaultResultOrder } from "node:dns";
 import { getEmailConfig, normalizeEmailFrom, type EmailConfig } from "../config/email.js";
+import {
+  createResendTransporter,
+  getResendApiKey,
+} from "../config/resend-adapter.js";
 import { getPublicFrontendUrl } from "../config/public-url.js";
 import { buildVerificationUrl } from "./certificate-artifact.service.js";
 
@@ -51,6 +55,14 @@ const getDefaultEmailFrom = (): string => {
 export const createEmailTransporter = (
   config: EmailConfig = getEmailConfig()
 ): EmailTransporter => {
+  const resendApiKey = getResendApiKey();
+
+  // Render's free tier blocks outbound SMTP ports, so prefer the Resend
+  // HTTPS API in production and keep SMTP for local development.
+  if (resendApiKey) {
+    return createResendTransporter(resendApiKey);
+  }
+
   setDefaultResultOrder("ipv4first");
 
   return nodemailer.createTransport({

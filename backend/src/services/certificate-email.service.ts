@@ -18,6 +18,7 @@ import {
   sendCertificateDeliveryEmail,
   type EmailTransporter,
 } from "./email.service.js";
+import { getResendApiKey } from "../config/resend-adapter.js";
 import { createNotification } from "../repositories/support.repository.js";
 import { getEmailConfig } from "../config/email.js";
 
@@ -170,11 +171,11 @@ export const sendCertificateEmail = async (
   transporter?: EmailTransporter
 ): Promise<CertificateEmailDeliveryResult> => {
   const certificate = await getSendableCertificate(organizationId, certificateId);
-  if (!transporter) {
+  if (!transporter && !getResendApiKey()) {
     try {
       getEmailConfig();
     } catch {
-      throw new HttpError(503, "Email sending is not configured. Ask your administrator to configure the Gmail sender and App Password.");
+      throw new HttpError(503, "Email sending is not configured. Ask your administrator to configure the email sender credentials.");
     }
   }
 
