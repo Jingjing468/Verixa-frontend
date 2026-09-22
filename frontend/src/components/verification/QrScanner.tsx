@@ -169,7 +169,16 @@ function QrScanner({ onScan }: Props) {
           <span className="verify-qr-corner tr" />
           <span className="verify-qr-corner bl" />
           <span className="verify-qr-corner br" />
-          {cameraActive ? <video ref={videoRef} className="verify-qr-video" muted playsInline /> : <div className="verify-qr-scanline" />}
+          {/* The video element must stay mounted so startCamera can attach the
+              MediaStream to it before the camera is marked active. */}
+          <video
+            ref={videoRef}
+            className="verify-qr-video"
+            muted
+            playsInline
+            style={cameraActive ? undefined : { display: 'none' }}
+          />
+          {!cameraActive && <div className="verify-qr-scanline" />}
           {!cameraActive && (
             <div className="verify-qr-center">
               <ScanLine size={32} />

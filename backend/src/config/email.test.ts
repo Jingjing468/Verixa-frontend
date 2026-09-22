@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { getEmailConfig } from "./email.js";
+import { getEmailConfig, normalizeEmailFrom } from "./email.js";
 
 const previousEnv = {
   SMTP_HOST: process.env.SMTP_HOST,
@@ -31,4 +31,23 @@ test("Gmail SMTP credentials are trimmed and app-password spaces are ignored", (
   assert.equal(config.user, "sender@gmail.com");
   assert.equal(config.pass, "abcdefghijklmnop");
   assert.equal(config.from, "Verixa <sender@gmail.com>");
+});
+
+test("normalizeEmailFrom repairs a From value missing its closing angle bracket", () => {
+  assert.equal(
+    normalizeEmailFrom('"Verixa <sender@gmail.com', "fallback@gmail.com"),
+    "Verixa <sender@gmail.com>"
+  );
+});
+
+test("normalizeEmailFrom keeps a well-formed From value unchanged", () => {
+  assert.equal(
+    normalizeEmailFrom("Verixa <sender@gmail.com>", "fallback@gmail.com"),
+    "Verixa <sender@gmail.com>"
+  );
+});
+
+test("normalizeEmailFrom accepts a bare address and repairs a display-name-only value", () => {
+  assert.equal(normalizeEmailFrom("sender@gmail.com", "fallback@gmail.com"), "sender@gmail.com");
+  assert.equal(normalizeEmailFrom('"Verixa', "fallback@gmail.com"), "Verixa <fallback@gmail.com>");
 });

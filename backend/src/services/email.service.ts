@@ -1,6 +1,6 @@
 import nodemailer, { type SendMailOptions } from "nodemailer";
 import { setDefaultResultOrder } from "node:dns";
-import { getEmailConfig, type EmailConfig } from "../config/email.js";
+import { getEmailConfig, normalizeEmailFrom, type EmailConfig } from "../config/email.js";
 import { getPublicFrontendUrl } from "../config/public-url.js";
 import { buildVerificationUrl } from "./certificate-artifact.service.js";
 
@@ -36,7 +36,13 @@ const escapeHtml = (value: string): string =>
     .replaceAll("'", "&#039;");
 
 const getDefaultEmailFrom = (): string => {
-  if (process.env.EMAIL_FROM) return process.env.EMAIL_FROM;
+  if (process.env.EMAIL_FROM) {
+    return normalizeEmailFrom(
+      process.env.EMAIL_FROM,
+      process.env.SMTP_USER?.trim() || "no-reply@example.com"
+    );
+  }
+
   if (process.env.SMTP_USER) return `Verixa <${process.env.SMTP_USER}>`;
 
   return "Verixa <no-reply@example.com>";
