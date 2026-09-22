@@ -85,6 +85,7 @@ export type CertificatePdfRecord = {
 };
 
 export type CertificateEmailRecord = {
+  design: CertificateDesign;
   id: string;
   certificate_id: string;
   recipient_name: string;

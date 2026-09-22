@@ -83,7 +83,11 @@ test("failed email delivery creates a failed email log", async () => {
   assert.equal(result.status, "failed");
   assert.equal(logs.length, 1);
   assert.equal(logs[0]?.status, "failed");
-  assert.equal(logs[0]?.error_message, "Certificate email delivery failed");
+  assert.equal(
+    logs[0]?.error_message,
+    "Certificate email delivery failed: SMTP unavailable"
+  );
+  assert.equal(result.message, "Certificate email delivery failed: SMTP unavailable");
 });
 
 test("resend delivery only creates a certificate_resent email log", async () => {

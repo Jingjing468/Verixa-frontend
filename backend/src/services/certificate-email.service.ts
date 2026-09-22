@@ -6,11 +6,13 @@ import {
 } from "../repositories/email-log.repository.js";
 import {
   findCertificateEmailDataByIdAndOrganization,
+  updateCertificatePdfUrl,
   type CertificateEmailRecord,
 } from "../repositories/certificate.repository.js";
 import { HttpError } from "../utils/http-error.js";
 import {
   certificatePdfExists,
+  generateCertificatePdf,
   getCertificatePdfPath,
 } from "./certificate-artifact.service.js";
 import {
@@ -67,6 +69,11 @@ const toSafeEmailLog = (log: EmailLogRecord): SafeEmailLog => ({
   createdAt: log.created_at.toISOString(),
 });
 
+const getEmailDeliveryErrorMessage = (error: unknown): string =>
+  error instanceof Error && error.message.trim().length > 0
+    ? `Certificate email delivery failed: ${error.message}`
+    : "Certificate email delivery failed";
+
 const getSendableCertificate = async (
   organizationId: string,
   certificateId: string
@@ -86,14 +93,21 @@ const getSendableCertificate = async (
     throw new HttpError(409, "Revoked certificates cannot be sent as issued certificates");
   }
 
-  if (!certificate.pdf_url) {
-    throw new HttpError(404, "Certificate PDF not found");
-  }
-
   const pdfExists = await certificatePdfExists(certificate.certificate_id);
 
   if (!pdfExists) {
-    throw new HttpError(404, "Certificate PDF not found");
+    const generatedPdf = await generateCertificatePdf({
+      id: certificate.id,
+      design: certificate.design,
+      certificateId: certificate.certificate_id,
+      recipientName: certificate.recipient_name,
+      courseName: certificate.course_name,
+      organizationName: certificate.organization_name,
+      issueDate: certificate.issue_date,
+      expiryDate: certificate.expiry_date,
+    });
+
+    await updateCertificatePdfUrl(certificate.id, organizationId, generatedPdf.pdfUrl);
   }
 
   return certificate;
@@ -134,20 +148,21 @@ export const sendCertificateEmailAttempt = async (
       message: "Certificate email sent successfully",
       log: toSafeEmailLog(log),
     };
-  } catch {
+  } catch (error: unknown) {
+    const errorMessage = getEmailDeliveryErrorMessage(error);
     const log = await createLog({
       certificateId: certificate.id,
       recipientEmail: certificate.recipientEmail,
       emailType,
       status: "failed",
-      errorMessage: "Certificate email delivery failed",
+      errorMessage,
       sentAt: null,
     });
 
     return {
       success: false,
       status: "failed",
-      message: "Certificate email delivery failed",
+      message: errorMessage,
       log: toSafeEmailLog(log),
     };
   }
