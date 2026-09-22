@@ -11,7 +11,6 @@ import {
 } from "../repositories/certificate.repository.js";
 import { HttpError } from "../utils/http-error.js";
 import {
-  certificatePdfExists,
   generateCertificatePdf,
   getCertificatePdfPath,
 } from "./certificate-artifact.service.js";
@@ -93,22 +92,18 @@ const getSendableCertificate = async (
     throw new HttpError(409, "Revoked certificates cannot be sent as issued certificates");
   }
 
-  const pdfExists = await certificatePdfExists(certificate.certificate_id);
+  const generatedPdf = await generateCertificatePdf({
+    id: certificate.id,
+    design: certificate.design,
+    certificateId: certificate.certificate_id,
+    recipientName: certificate.recipient_name,
+    courseName: certificate.course_name,
+    organizationName: certificate.organization_name,
+    issueDate: certificate.issue_date,
+    expiryDate: certificate.expiry_date,
+  });
 
-  if (!pdfExists) {
-    const generatedPdf = await generateCertificatePdf({
-      id: certificate.id,
-      design: certificate.design,
-      certificateId: certificate.certificate_id,
-      recipientName: certificate.recipient_name,
-      courseName: certificate.course_name,
-      organizationName: certificate.organization_name,
-      issueDate: certificate.issue_date,
-      expiryDate: certificate.expiry_date,
-    });
-
-    await updateCertificatePdfUrl(certificate.id, organizationId, generatedPdf.pdfUrl);
-  }
+  await updateCertificatePdfUrl(certificate.id, organizationId, generatedPdf.pdfUrl);
 
   return certificate;
 };

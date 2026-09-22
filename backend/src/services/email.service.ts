@@ -1,4 +1,5 @@
 import nodemailer, { type SendMailOptions } from "nodemailer";
+import { setDefaultResultOrder } from "node:dns";
 import { getEmailConfig, type EmailConfig } from "../config/email.js";
 import { getPublicFrontendUrl } from "../config/public-url.js";
 import { buildVerificationUrl } from "./certificate-artifact.service.js";
@@ -43,8 +44,10 @@ const getDefaultEmailFrom = (): string => {
 
 export const createEmailTransporter = (
   config: EmailConfig = getEmailConfig()
-): EmailTransporter =>
-  nodemailer.createTransport({
+): EmailTransporter => {
+  setDefaultResultOrder("ipv4first");
+
+  return nodemailer.createTransport({
     host: config.host,
     port: config.port,
     secure: config.secure,
@@ -57,6 +60,7 @@ export const createEmailTransporter = (
       pass: config.pass,
     },
   });
+};
 
 export const sendCertificateDeliveryEmail = async (
   email: CertificateDeliveryEmail,

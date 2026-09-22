@@ -42,7 +42,6 @@ import {
   type CertificateEmailDeliveryResult,
 } from "./certificate-email.service.js";
 import {
-  certificatePdfExists,
   generateCertificatePdf,
   generateCertificateQrCodeBuffer,
   getCertificatePdfFileName,
@@ -324,12 +323,8 @@ export const getCertificatePdfDownload = async (
     throw new HttpError(404, "Certificate not found");
   }
 
-  const exists = await certificatePdfExists(certificate.certificate_id);
-
-  if (!exists) {
-    const generatedPdf = await generateCertificatePdf(toCertificatePdfData(certificate));
-    await updateCertificatePdfUrl(id, organizationId, generatedPdf.pdfUrl);
-  }
+  const generatedPdf = await generateCertificatePdf(toCertificatePdfData(certificate));
+  await updateCertificatePdfUrl(id, organizationId, generatedPdf.pdfUrl);
 
   return {
     filePath: getCertificatePdfPath(certificate.certificate_id),

@@ -1,9 +1,11 @@
 import "dotenv/config";
+import { setDefaultResultOrder } from "node:dns";
 import nodemailer from "nodemailer";
 import { getEmailConfig } from "../config/email.js";
 
 try {
   const config = getEmailConfig();
+  setDefaultResultOrder("ipv4first");
   const transport = nodemailer.createTransport({
     host: config.host,
     port: config.port,

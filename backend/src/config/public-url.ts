@@ -1,5 +1,7 @@
 export const getPublicFrontendUrl = (): string => {
-  const publicFrontendUrl = process.env.PUBLIC_FRONTEND_URL?.trim();
+  const publicFrontendUrl = (
+    process.env.PUBLIC_FRONTEND_URL ?? process.env.public_frontend_url
+  )?.trim();
 
   if (!publicFrontendUrl) {
     throw new Error("PUBLIC_FRONTEND_URL environment variable is required");
@@ -9,11 +11,15 @@ export const getPublicFrontendUrl = (): string => {
     /^(['"])(.*)\1$/,
     "$2"
   );
+  const withoutEnvAssignment = unquotedPublicFrontendUrl.replace(
+    /^public_frontend_url\s*=\s*/i,
+    ""
+  );
   const normalizedPublicFrontendUrl = /^[a-z][a-z\d+\-.]*:\/\//i.test(
-    unquotedPublicFrontendUrl
+    withoutEnvAssignment
   )
-    ? unquotedPublicFrontendUrl
-    : `http://${unquotedPublicFrontendUrl}`;
+    ? withoutEnvAssignment
+    : `http://${withoutEnvAssignment}`;
 
   try {
     const url = new URL(normalizedPublicFrontendUrl);
