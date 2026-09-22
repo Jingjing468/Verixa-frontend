@@ -17,20 +17,27 @@ function extractCertificateId(value: string): string {
 
   if (!trimmed) return ''
 
+  const directMatch = trimmed.match(/CERT-\d{4}-\d{7}/i)
+
   try {
     const url = new URL(trimmed)
-    const match = url.pathname.match(/\/verify\/([^/?#]+)/i)
+    const queryId = url.searchParams.get('certificateId') ?? url.searchParams.get('id')
+    const match = url.pathname.match(/(?:\/api\/v\d+)?\/verify\/([^/?#]+)/i)
 
     if (match?.[1]) {
       return decodeURIComponent(match[1]).trim()
     }
+
+    if (queryId) return queryId.trim()
   } catch {
-    const match = trimmed.match(/\/verify\/([^/?#]+)/i)
+    const match = trimmed.match(/(?:\/api\/v\d+)?\/verify\/([^/?#]+)/i)
 
     if (match?.[1]) {
       return decodeURIComponent(match[1]).trim()
     }
   }
+
+  if (directMatch?.[0]) return directMatch[0].trim()
 
   return trimmed
 }

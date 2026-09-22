@@ -41,7 +41,7 @@ const parseSmtpSecure = (
 };
 
 const getRequiredEnv = (name: string): string => {
-  const value = process.env[name];
+  const value = process.env[name]?.trim();
 
   if (!value) {
     throw new Error(`${name} environment variable is required`);
@@ -50,11 +50,17 @@ const getRequiredEnv = (name: string): string => {
   return value;
 };
 
+const normalizeSmtpPassword = (host: string, pass: string): string =>
+  host === defaultSmtpHost ? pass.replace(/\s+/g, "") : pass;
+
 export const getEmailConfig = (): EmailConfig => ({
-  host: process.env.SMTP_HOST ?? defaultSmtpHost,
+  host: (process.env.SMTP_HOST ?? defaultSmtpHost).trim(),
   port: parseSmtpPort(process.env.SMTP_PORT),
   secure: parseSmtpSecure(process.env.SMTP_SECURE),
   user: getRequiredEnv("SMTP_USER"),
-  pass: getRequiredEnv("SMTP_PASS"),
+  pass: normalizeSmtpPassword(
+    (process.env.SMTP_HOST ?? defaultSmtpHost).trim(),
+    getRequiredEnv("SMTP_PASS")
+  ),
   from: process.env.EMAIL_FROM ?? `Verixa <${getRequiredEnv("SMTP_USER")}>`,
 });

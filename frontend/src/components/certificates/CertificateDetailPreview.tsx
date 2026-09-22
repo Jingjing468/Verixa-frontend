@@ -10,8 +10,34 @@ interface Props {
 export default function CertificateDetailPreview({ certificate }: Props) {
   const [previewOpen, setPreviewOpen] = useState(false)
   const [pdfUrl, setPdfUrl] = useState('')
+  const [qrUrl, setQrUrl] = useState('')
   const [previewError, setPreviewError] = useState('')
   const dialog = useRef<HTMLDialogElement>(null)
+
+  useEffect(() => {
+    const controller = new AbortController()
+    let url = ''
+    const token = getAuthToken()
+
+    fetch(apiUrl(`/certificates/${certificate.id}/qr`), {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      signal: controller.signal,
+    })
+      .then(async response => {
+        if (!response.ok) throw new Error('Could not load certificate QR')
+        const blob = await response.blob()
+        if (controller.signal.aborted) return
+        url = URL.createObjectURL(blob)
+        setQrUrl(url)
+      })
+      .catch(() => setQrUrl(''))
+
+    return () => {
+      controller.abort()
+      if (url) URL.revokeObjectURL(url)
+    }
+  }, [certificate.id])
+
   useEffect(() => {
     if (!previewOpen) return
     dialog.current?.showModal()
@@ -76,7 +102,7 @@ export default function CertificateDetailPreview({ certificate }: Props) {
           </div>
           <div className="detail-qr">
             <div className="cert-qr-box">
-              <QrCode size={38} />
+              {qrUrl ? <img src={qrUrl} alt={`Verification QR for ${certificate.certificateId}`} /> : <QrCode size={38} />}
             </div>
             <small className="cert-qr-id">{certificate.certificateId}</small>
           </div>

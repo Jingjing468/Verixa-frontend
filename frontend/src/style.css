@@ -588,3 +588,4 @@
 .verify-qr-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:14px}
 .verify-qr-actions label.verify-btn-secondary{cursor:pointer}
 .verify-qr-actions input[type=file]{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+.cert-qr-box img{display:block;width:48px;height:48px;object-fit:contain}

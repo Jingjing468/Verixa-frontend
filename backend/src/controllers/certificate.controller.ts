@@ -6,6 +6,7 @@ import {
 import {
   addCertificate,
   getCertificatePdfDownload,
+  getCertificateQrCode,
   getCertificate,
   listCertificates,
   listCertificateRevocations,
@@ -149,6 +150,24 @@ export const downloadPdf = async (req: Request, res: Response): Promise<void> =>
     );
 
     res.download(result.filePath, result.fileName);
+  } catch (error: unknown) {
+    sendErrorResponse(res, error);
+  }
+};
+
+export const downloadQrCode = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const context = getAuthenticatedContext(req);
+    const result = await getCertificateQrCode(
+      context.organizationId,
+      getRouteParam(req, "id")
+    );
+
+    res
+      .status(200)
+      .type("png")
+      .setHeader("Content-Disposition", `inline; filename="${result.fileName}"`);
+    res.send(result.buffer);
   } catch (error: unknown) {
     sendErrorResponse(res, error);
   }

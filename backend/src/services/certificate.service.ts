@@ -44,6 +44,7 @@ import {
 import {
   certificatePdfExists,
   generateCertificatePdf,
+  generateCertificateQrCodeBuffer,
   getCertificatePdfFileName,
   getCertificatePdfPath,
   type CertificatePdfData,
@@ -333,6 +334,27 @@ export const getCertificatePdfDownload = async (
   return {
     filePath: getCertificatePdfPath(certificate.certificate_id),
     fileName: getCertificatePdfFileName(certificate.certificate_id),
+  };
+};
+
+export const getCertificateQrCode = async (
+  organizationId: string,
+  id: string
+): Promise<{ buffer: Buffer; fileName: string }> => {
+  assertValidUuid(id, "Certificate");
+
+  const certificate = await findCertificatePdfDataByIdAndOrganization(
+    id,
+    organizationId
+  );
+
+  if (!certificate) {
+    throw new HttpError(404, "Certificate not found");
+  }
+
+  return {
+    buffer: await generateCertificateQrCodeBuffer(certificate.certificate_id),
+    fileName: `${certificate.certificate_id}.png`,
   };
 };
 

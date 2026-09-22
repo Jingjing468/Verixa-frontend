@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   create,
   downloadPdf,
+  downloadQrCode,
   emails,
   index,
   regeneratePdf,
@@ -22,6 +23,7 @@ router.get("/:id", show);
 router.get("/:id/revocations", revocations);
 router.get("/:id/emails", emails);
 router.get("/:id/pdf", downloadPdf);
+router.get("/:id/qr", downloadQrCode);
 router.post("/", create);
 router.post("/:id/revoke", revoke);
 router.post("/:id/send", sendEmail);
