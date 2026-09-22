@@ -581,6 +581,10 @@
 .auth-form .field input:autofill{box-shadow:0 0 0 1000px #fbfcff inset;color:#313c50}
 .auth-form .field:focus-within{border-color:#a7b8d5;box-shadow:0 0 0 3px rgba(83,105,142,.06)}
 .recent-certificates-error{display:block;padding:0 24px 12px}
+.recent-certificates .table-actions{position:relative}
+.recent-action-menu{position:absolute;z-index:200;top:32px;right:0;display:grid;width:164px;padding:5px;background:#fff;border:1px solid #dfe5ef;border-radius:10px;box-shadow:0 16px 32px rgba(41,56,86,.18);animation:menu-in .15s both}
+.recent-action-menu a,.recent-action-menu button{display:flex!important;width:100%!important;height:auto!important;align-items:center!important;justify-content:flex-start!important;gap:8px;padding:9px 10px;color:#59677d;background:#fff;border:0;border-radius:6px;cursor:pointer;text-align:left;font:inherit;font-size:9px;font-weight:700}
+.recent-action-menu a:hover,.recent-action-menu button:hover{color:#3975ff;background:#f4f7ff}
 .verify-qr-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:14px}
 .verify-qr-actions label.verify-btn-secondary{cursor:pointer}
 .verify-qr-actions input[type=file]{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}

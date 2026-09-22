@@ -20,8 +20,6 @@ interface Props {
   certificates: RecentCertificate[]
 }
 
-type ActionMenuState = { certificate: RecentCertificate; top: number; right: number }
-
 function formatDate(value: string) {
   return new Intl.DateTimeFormat('en', {
     month: 'short',
@@ -35,7 +33,7 @@ function statusLabel(status: CertificateStatus) {
 }
 
 function RecentCertificates({ certificates }: Props) {
-  const [actionMenu, setActionMenu] = useState<ActionMenuState | null>(null)
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const [error, setError] = useState('')
 
   const downloadPdf = (certificate: RecentCertificate) => {
@@ -62,7 +60,7 @@ function RecentCertificates({ certificates }: Props) {
   }
 
   return (
-    <section className="recent-certificates dashboard-card dashboard-enter" onClick={() => setActionMenu(null)}>
+    <section className="recent-certificates dashboard-card dashboard-enter" onClick={() => setOpenMenuId(null)}>
       <div className="card-heading">
         <div>
           <h2>Recent Certificates</h2>
@@ -103,15 +101,21 @@ function RecentCertificates({ certificates }: Props) {
                         type="button"
                         title="More actions"
                         aria-label={`More actions for ${certificate.certificateId}`}
-                        aria-expanded={actionMenu?.certificate.id === certificate.id}
+                        aria-expanded={openMenuId === certificate.id}
                         onClick={(event) => {
                           event.stopPropagation()
-                          const bounds = event.currentTarget.getBoundingClientRect()
-                          setActionMenu((current) => current?.certificate.id === certificate.id ? null : { certificate, top: bounds.bottom + 7, right: window.innerWidth - bounds.right })
+                          setOpenMenuId((current) => current === certificate.id ? null : certificate.id)
                         }}
                       >
                         <Ellipsis size={17} />
                       </button>
+                      {openMenuId === certificate.id && (
+                        <div className="recent-action-menu" onClick={(event) => event.stopPropagation()}>
+                          <Link to={`/certificates/${certificate.id}`}><Eye size={14} /> View Details</Link>
+                          <button type="button" onClick={() => { downloadPdf(certificate); setOpenMenuId(null) }}><ArrowDownToLine size={14} /> Download PDF</button>
+                          <Link to={`/certificates/${certificate.id}/edit`}><Edit3 size={14} /> Edit Certificate</Link>
+                        </div>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -123,13 +127,6 @@ function RecentCertificates({ certificates }: Props) {
         <div className="dashboard-empty-state dashboard-empty-table">
           <b>No certificates yet</b>
           <span>Issued certificates will appear here after you create them.</span>
-        </div>
-      )}
-      {actionMenu && (
-        <div className="certificate-action-menu floating" style={{ top: actionMenu.top, right: actionMenu.right }} onClick={(event) => event.stopPropagation()}>
-          <Link to={`/certificates/${actionMenu.certificate.id}`}><Eye size={14} /> View Details</Link>
-          <button type="button" onClick={() => { downloadPdf(actionMenu.certificate); setActionMenu(null) }}><ArrowDownToLine size={14} /> Download PDF</button>
-          <Link to={`/certificates/${actionMenu.certificate.id}/edit`}><Edit3 size={14} /> Edit Certificate</Link>
         </div>
       )}
     </section>
