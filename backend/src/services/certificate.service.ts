@@ -323,14 +323,11 @@ export const getCertificatePdfDownload = async (
     throw new HttpError(404, "Certificate not found");
   }
 
-  if (!certificate.pdf_url) {
-    throw new HttpError(404, "Certificate PDF not found");
-  }
-
   const exists = await certificatePdfExists(certificate.certificate_id);
 
   if (!exists) {
-    throw new HttpError(404, "Certificate PDF not found");
+    const generatedPdf = await generateCertificatePdf(toCertificatePdfData(certificate));
+    await updateCertificatePdfUrl(id, organizationId, generatedPdf.pdfUrl);
   }
 
   return {
