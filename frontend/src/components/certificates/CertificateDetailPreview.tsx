@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { apiUrl, getAuthToken } from '../../api/client'
 import { ArrowUpRight, Award, QrCode, ShieldCheck, Link2 } from 'lucide-react'
-import verixaLogo from '../../assets/verixaicon.png'
 import type { CertificateDetail } from '../../types/certificate'
 
 interface Props {
@@ -45,13 +44,7 @@ export default function CertificateDetailPreview({ certificate }: Props) {
 
         {/* Header */}
         <div className="detail-cert-header">
-          <span className="detail-org-mark">
-            <img src={verixaLogo} alt="Verixa" className="cert-logo-img" />
-          </span>
-          <div>
-            <b>VERIXA</b>
-            <small>VERIFIED CREDENTIAL</small>
-          </div>
+          {certificate.organizationLogo && <img src={certificate.organizationLogo} alt="Organization logo" className="detail-organization-logo" />}
           <span className="detail-cert-verified">
             <ShieldCheck size={15} /> {certificate.blockchainVerified ? 'Blockchain verified' : 'Credential issued'}
           </span>

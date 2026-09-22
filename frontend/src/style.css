@@ -383,6 +383,7 @@
 .cert-decor{position:absolute;width:80px;height:80px;border:3px solid #dce8ff;opacity:.5;z-index:0}.cert-decor-tl{top:-20px;left:-20px;border-right:0;border-bottom:0;border-radius:0 0 0 18px}.cert-decor-br{bottom:-20px;right:-20px;border-left:0;border-top:0;border-radius:0 0 0 18px}
 .cert-blockchain-watermark{position:absolute;right:-10px;bottom:-15px;color:#e8eeff;z-index:0;transform:rotate(-12deg);pointer-events:none;opacity:.6}
 .cert-logo-img{width:22px;height:22px;object-fit:contain;border-radius:4px}
+.detail-organization-logo{width:48px;height:48px;object-fit:contain;flex-shrink:0}
 .detail-org-mark{background:transparent!important;border:1px solid #e2eaff;display:flex;align-items:center;justify-content:center}
 .cert-qr-box{display:grid;place-items:center;width:56px;height:56px;margin:0 auto 4px;background:#f7f9ff;border:1px solid #e0e8f5;border-radius:8px;color:#4a5770}
 .cert-qr-id{color:#8995a8;font-size:7px;letter-spacing:.3px}
@@ -579,3 +580,4 @@
 }
 .auth-form .field input:autofill{box-shadow:0 0 0 1000px #fbfcff inset;color:#313c50}
 .auth-form .field:focus-within{border-color:#a7b8d5;box-shadow:0 0 0 3px rgba(83,105,142,.06)}
+.recent-certificates-error{display:block;padding:0 24px 12px}

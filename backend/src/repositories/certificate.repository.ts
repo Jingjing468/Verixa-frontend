@@ -2,6 +2,7 @@ import type { PoolClient, QueryResult, QueryResultRow } from "pg";
 import { pool } from "../config/database.js";
 import type { CertificateStatus } from "../types/certificate.js";
 import type { CertificateHashData } from "../utils/certificate-hash.js";
+import type { CertificateDesign } from "../services/certificate-artifact.service.js";
 
 type DatabaseClient = {
   query<T extends QueryResultRow = QueryResultRow>(
@@ -25,6 +26,7 @@ export type CertificateRecord = {
 };
 
 export type CertificateDetailRecord = CertificateRecord & {
+  design: CertificateDesign;
   organization_id: string;
   organization_name: string;
   organization_email: string;
@@ -71,7 +73,7 @@ export type CertificateHashRecord = {
 };
 
 export type CertificatePdfRecord = {
-  design: import("../services/certificate-artifact.service.js").CertificateDesign;
+  design: CertificateDesign;
   id: string;
   certificate_id: string;
   recipient_name: string;
@@ -305,6 +307,7 @@ export const findCertificateDetailByIdAndOrganization = async (
     `
       SELECT
         ${certificateSummaryColumnsSql},
+        c.design,
         o.id AS organization_id,
         o.name AS organization_name,
         o.email AS organization_email,

@@ -132,10 +132,7 @@ export const generateCertificatePdf = async (
     const text = (value: string,x: number,y: number,width: number,size: number,color: string,font='Helvetica',align: 'left'|'center'|'right'='left') => {
       document.font(font).fontSize(size).fillColor(color).text(value,x,y,{width,align,height:42,ellipsis:true});
     };
-    let brandX = 48;
-    if(d.organizationLogo){image(d.organizationLogo,48,44,32,32);brandX=92;}
-    document.image(path.resolve(import.meta.dirname,'../../../frontend/src/assets/verixaicon.png'),brandX,35,{width:104});
-    text('VERIFIED CREDENTIAL',brandX,78,160,6,muted,'Helvetica-Bold');
+    if(d.organizationLogo){image(d.organizationLogo,48,44,64,64);}
     text('CERTIFICATE OF ACHIEVEMENT',48,142,w-96,9,accent,'Helvetica-Bold','center');
     text(d.certificateTitle || 'Certificate of Completion',48,174,w-96,27,'#354156','Helvetica','center');
     text('This certifies that',48,235,w-96,11,muted,'Helvetica','center');

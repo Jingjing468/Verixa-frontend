@@ -170,6 +170,7 @@ const toSummary = (record: CertificateRecord): CertificateSummary => ({
 const toDetail = (record: CertificateDetailRecord): CertificateDetail => ({
   blockchain: null,
   ...toSummary(record),
+  design: record.design,
   organization: {
     id: record.organization_id,
     name: record.organization_name,

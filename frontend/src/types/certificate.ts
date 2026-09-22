@@ -21,6 +21,7 @@ export interface BlockchainRecord {
 export interface CertificateDetail extends Certificate {
   title: string
   issuer: string
+  organizationLogo?: string
   blockchain: BlockchainRecord
   revocationReason?: string
 }

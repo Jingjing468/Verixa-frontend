@@ -105,6 +105,16 @@ export type CertificatesResponse = {
 export type CertificateDetailResponse = {
   success: true
   certificate: { blockchain?: { network: string; transactionHash: string; blockNumber: number; certificateHash: string } | null } & CertificateSummary & {
+    design?: {
+      organizationLogo?: string
+      certificateTitle?: string
+      organizationName?: string
+      signature?: string
+      signerName?: string
+      signerTitle?: string
+      template?: 'classic' | 'modern' | 'minimal'
+      accent?: 'blue' | 'violet' | 'emerald'
+    }
     organization: ApiOrganization
     issuer: {
       id: string

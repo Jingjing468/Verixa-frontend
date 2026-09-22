@@ -24,8 +24,9 @@ const mapCertificateDetail = (response: CertificateDetailResponse): CertificateD
   expirationDate: response.certificate.expiryDate ?? 'No expiry',
   status: response.certificate.status,
   blockchainVerified: Boolean(response.certificate.blockchain),
-  title: 'Certificate of Completion',
+  title: response.certificate.design?.certificateTitle || 'Certificate of Completion',
   issuer: response.certificate.organization.name,
+  organizationLogo: response.certificate.design?.organizationLogo,
   revocationReason: response.certificate.revocation?.reason,
   blockchain: {
     network: response.certificate.blockchain?.network ?? 'Not anchored',
