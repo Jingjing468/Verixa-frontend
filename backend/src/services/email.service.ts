@@ -49,33 +49,40 @@ const getDefaultEmailFrom = (): string => {
 
   if (process.env.SMTP_USER) return `Verixa <${process.env.SMTP_USER}>`;
 
-  return "Verixa <no-reply@example.com>";
+  // No sender identity is configured. Fail with a clear setup error instead
+  // of sending from an address the email provider would reject.
+  throw new Error(
+    'EMAIL_FROM is not configured. Set EMAIL_FROM to the sender address allowed by your email provider, e.g. EMAIL_FROM="Verixa <you@example.com>".'
+  );
 };
 
 export const createEmailTransporter = (
-  config: EmailConfig = getEmailConfig()
+  config?: EmailConfig
 ): EmailTransporter => {
   const resendApiKey = getResendApiKey();
 
-  // Render's free tier blocks outbound SMTP ports, so prefer the Resend
-  // HTTPS API in production and keep SMTP for local development.
+  // Resend sends over HTTPS (Render's free tier blocks outbound SMTP ports),
+  // so prefer the Resend API in production and keep SMTP for local
+  // development. SMTP configuration is only read when the SMTP path is used,
+  // so a Resend-only deployment does not need the SMTP_* variables.
   if (resendApiKey) {
     return createResendTransporter(resendApiKey);
   }
 
+  const emailConfig = config ?? getEmailConfig();
   setDefaultResultOrder("ipv4first");
 
   return nodemailer.createTransport({
-    host: config.host,
-    port: config.port,
-    secure: config.secure,
-    requireTLS: !config.secure,
+    host: emailConfig.host,
+    port: emailConfig.port,
+    secure: emailConfig.secure,
+    requireTLS: !emailConfig.secure,
     connectionTimeout: 10000,
     greetingTimeout: 10000,
     socketTimeout: 20000,
     auth: {
-      user: config.user,
-      pass: config.pass,
+      user: emailConfig.user,
+      pass: emailConfig.pass,
     },
   });
 };
