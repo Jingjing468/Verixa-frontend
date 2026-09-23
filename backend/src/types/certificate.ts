@@ -17,7 +17,16 @@ export type CertificateSummary = {
 };
 
 export type CertificateDetail = CertificateSummary & {
-  blockchain: { network: string; transactionHash: string; blockNumber: number; certificateHash: string } | null;
+  blockchain: {
+    network: string;
+    transactionHash: string;
+    blockNumber: number;
+    contractAddress: string | null;
+    certificateHash: string;
+    verificationStatus: "Verified" | "Mismatch" | "Revoked" | "Unavailable";
+    verified: boolean;
+    message?: string;
+  } | null;
   design: import("../services/certificate-artifact.service.js").CertificateDesign;
   organization: {
     id: string;

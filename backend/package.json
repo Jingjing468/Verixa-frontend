@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit",
     "migrate": "tsx src/scripts/migrate.ts",
     "backfill:certificate-hashes": "tsx src/scripts/backfill-certificate-hashes.ts",
+    "deploy:sepolia": "npm --prefix blockchain run deploy:sepolia",
     "test": "tsx --test src/**/*.test.ts"
   },
   "keywords": [],

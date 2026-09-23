@@ -7,7 +7,7 @@ interface Props {
 }
 
 export default function BlockchainVerificationCard({ blockchain, onCopy }: Props) {
-  const hasTransaction = blockchain.verified && /^0x[0-9a-fA-F]{64}$/.test(blockchain.transactionHash)
+  const hasTransaction = /^0x[0-9a-fA-F]{64}$/.test(blockchain.transactionHash)
   const hasCertificateHash = blockchain.certificateHash.length > 0
 
   return (
@@ -19,7 +19,7 @@ export default function BlockchainVerificationCard({ blockchain, onCopy }: Props
         <div>
           <h2>Blockchain Verification</h2>
           <p>
-            <i /> {blockchain.verified ? 'Recorded on Blockchain' : 'Not anchored on blockchain'}
+            <i /> {hasTransaction ? 'Anchored on blockchain' : 'Not anchored on blockchain'}
           </p>
         </div>
       </div>
@@ -61,8 +61,9 @@ export default function BlockchainVerificationCard({ blockchain, onCopy }: Props
         <div>
           <small>Verification Status</small>
           <b className="hash-match">
-            <Hash size={12} className="inline-icon" /> {blockchain.verified ? 'Recorded hash' : 'Not available'}
+            <Hash size={12} className="inline-icon" /> {blockchain.verificationStatus}
           </b>
+          {blockchain.message && <small>{blockchain.message}</small>}
         </div>
       </div>
 

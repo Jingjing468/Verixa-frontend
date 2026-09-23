@@ -21,7 +21,9 @@ export const getBlockchainConfig = (): BlockchainConfig => {
   }
 
   if (!contractAddress) {
-    throw new Error("VERIXA_CONTRACT_ADDRESS environment variable is required");
+    throw new Error(
+      "VERIXA_CONTRACT_ADDRESS environment variable is required. Deploy VerixaCertificateRegistry first."
+    );
   }
 
   if (!isAddress(contractAddress)) {

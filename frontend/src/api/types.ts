@@ -104,7 +104,16 @@ export type CertificatesResponse = {
 
 export type CertificateDetailResponse = {
   success: true
-  certificate: { blockchain?: { network: string; transactionHash: string; blockNumber: number; certificateHash: string } | null } & CertificateSummary & {
+  certificate: { blockchain?: {
+    network: string
+    transactionHash: string
+    blockNumber: number
+    contractAddress: string | null
+    certificateHash: string
+    verificationStatus: 'Verified' | 'Mismatch' | 'Revoked' | 'Unavailable'
+    verified: boolean
+    message?: string
+  } | null } & CertificateSummary & {
     design?: {
       organizationLogo?: string
       certificateTitle?: string

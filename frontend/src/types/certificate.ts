@@ -16,8 +16,11 @@ export interface BlockchainRecord {
   network: string
   transactionHash: string
   blockNumber: number
+  contractAddress: string | null
   certificateHash: string
+  verificationStatus: 'Verified' | 'Mismatch' | 'Revoked' | 'Unavailable' | 'Not available'
   verified: boolean
+  message?: string
 }
 export interface CertificateDetail extends Certificate {
   title: string

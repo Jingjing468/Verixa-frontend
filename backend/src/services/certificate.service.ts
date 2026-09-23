@@ -284,6 +284,72 @@ const createNotificationSafely = async (input: Parameters<typeof createNotificat
 
 const isBlockchainIssuanceEnabled = (): boolean => process.env.BLOCKCHAIN_ENABLED === "true";
 
+const toBlockchainErrorMessage = (error: unknown): string => {
+  if (!(error instanceof Error)) {
+    return "Unknown blockchain error";
+  }
+
+  return error.message;
+};
+
+const getCertificateBlockchain = async (
+  certificate: CertificateDetailRecord
+): Promise<CertificateDetail["blockchain"]> => {
+  const record = await findBlockchainRecordByCertificateId(certificate.id);
+
+  if (!record) {
+    return null;
+  }
+
+  const recomputedHash = generateCertificateHash({
+    certificateId: certificate.certificate_id,
+    recipientName: certificate.recipient_name,
+    recipientEmail: certificate.recipient_email,
+    courseName: certificate.course_name,
+    organizationName: certificate.organization_name,
+    issueDate: certificate.issue_date,
+    expiryDate: certificate.expiry_date,
+  });
+  const databaseHashMatched = recomputedHash === record.certificate_hash;
+  const baseBlockchain = {
+    network: record.network === "sepolia" ? "Sepolia" : record.network,
+    transactionHash: record.transaction_hash,
+    blockNumber: Number(record.block_number ?? 0),
+    contractAddress: record.contract_address,
+    certificateHash: record.certificate_hash,
+  };
+
+  try {
+    const proof = await createBlockchainService().getCertificateProof(
+      certificate.certificate_id
+    );
+    const blockchainHashMatched = proof.certificateHash === record.certificate_hash;
+
+    if (proof.revoked) {
+      return {
+        ...baseBlockchain,
+        verificationStatus: "Revoked",
+        verified: false,
+      };
+    }
+
+    const verified = databaseHashMatched && blockchainHashMatched;
+
+    return {
+      ...baseBlockchain,
+      verificationStatus: verified ? "Verified" : "Mismatch",
+      verified,
+    };
+  } catch (error: unknown) {
+    return {
+      ...baseBlockchain,
+      verificationStatus: "Unavailable",
+      verified: false,
+      message: `Blockchain verification unavailable: ${toBlockchainErrorMessage(error)}`,
+    };
+  }
+};
+
 export const regenerateCertificatePdf = async (
   organizationId: string,
   id: string
@@ -407,8 +473,9 @@ export const addCertificate = async (
   }
 
   const warnings: string[] = [];
-  try {
-    if (isBlockchainIssuanceEnabled()) {
+
+  if (isBlockchainIssuanceEnabled()) {
+    try {
       const blockchainResult = await createBlockchainService().issueCertificateOnChain(
         createdCertificate.certificate_id,
         createdCertificateHash
@@ -422,9 +489,17 @@ export const addCertificate = async (
         contractAddress: blockchainResult.contractAddress,
         certificateHash: createdCertificateHash,
       });
-    } else {
-      warnings.push("Certificate created without blockchain anchoring.");
+    } catch (error: unknown) {
+      throw new HttpError(
+        502,
+        `Certificate was saved, but blockchain anchoring failed: ${toBlockchainErrorMessage(error)}`
+      );
     }
+  } else {
+    warnings.push("Certificate created without blockchain anchoring.");
+  }
+
+  try {
     await regenerateCertificatePdf(organizationId, createdCertificate.id);
     await createNotificationSafely({
       organizationId,
@@ -633,10 +708,7 @@ export const getCertificate = async (
 
   return {
     success: true,
-    certificate: { ...toDetail(certificate), blockchain: await (async () => {
-      const record = await findBlockchainRecordByCertificateId(id);
-      return record ? { network: record.network, transactionHash: record.transaction_hash, blockNumber: Number(record.block_number ?? 0), certificateHash: record.certificate_hash } : null;
-    })() },
+    certificate: { ...toDetail(certificate), blockchain: await getCertificateBlockchain(certificate) },
   };
 };
 

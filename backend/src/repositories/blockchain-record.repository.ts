@@ -8,6 +8,7 @@ export type BlockchainRecord = {
   block_number: string | null;
   contract_address: string | null;
   certificate_hash: string;
+  status: "confirmed" | "failed";
   created_at: Date;
 };
 
@@ -18,6 +19,7 @@ export type CreateBlockchainRecordInput = {
   blockNumber: number | null;
   contractAddress: string;
   certificateHash: string;
+  status?: "confirmed" | "failed";
 };
 
 export const findBlockchainRecordByCertificateId = async (
@@ -33,6 +35,7 @@ export const findBlockchainRecordByCertificateId = async (
         block_number::text AS block_number,
         contract_address,
         certificate_hash,
+        status,
         created_at
       FROM blockchain_records
       WHERE certificate_id = $1
@@ -55,9 +58,10 @@ export const createBlockchainRecord = async (
         transaction_hash,
         block_number,
         contract_address,
-        certificate_hash
+        certificate_hash,
+        status
       )
-      VALUES ($1, $2, $3, $4, $5, $6)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
       ON CONFLICT (certificate_id) DO NOTHING
       RETURNING
         id,
@@ -67,6 +71,7 @@ export const createBlockchainRecord = async (
         block_number::text AS block_number,
         contract_address,
         certificate_hash,
+        status,
         created_at
     `,
     [
@@ -76,6 +81,7 @@ export const createBlockchainRecord = async (
       input.blockNumber,
       input.contractAddress,
       input.certificateHash,
+      input.status ?? "confirmed",
     ]
   );
 

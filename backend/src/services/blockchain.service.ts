@@ -44,6 +44,8 @@ export type VerixaContract = {
   }>;
 };
 
+const SEPOLIA_CHAIN_ID = 11155111n;
+
 const waitForReceipt = async (
   transaction: ContractTransactionResponse
 ): Promise<ContractTransactionReceipt> => {
@@ -63,6 +65,8 @@ const waitForReceipt = async (
 export class BlockchainService {
   private readonly config: BlockchainConfig;
   private readonly contract: VerixaContract;
+  private readonly provider: JsonRpcProvider | null = null;
+  private readonly walletAddress: string | null = null;
 
   public constructor(config = getBlockchainConfig(), contract?: VerixaContract) {
     this.config = config;
@@ -74,6 +78,8 @@ export class BlockchainService {
 
     const provider = new JsonRpcProvider(config.rpcUrl);
     const signer = new Wallet(config.privateKey, provider);
+    this.provider = provider;
+    this.walletAddress = signer.address;
 
     this.contract = new Contract(
       config.contractAddress,
@@ -82,10 +88,51 @@ export class BlockchainService {
     ) as unknown as VerixaContract;
   }
 
+  private async assertSepoliaWalletReady(): Promise<void> {
+    if (!this.provider || !this.walletAddress) {
+      return;
+    }
+
+    let chainId: bigint;
+
+    try {
+      const network = await this.provider.getNetwork();
+      chainId = network.chainId;
+    } catch (error: unknown) {
+      throw new Error(
+        `RPC unavailable: ${error instanceof Error ? error.message : "Could not reach Sepolia RPC"}`
+      );
+    }
+
+    if (chainId !== SEPOLIA_CHAIN_ID) {
+      throw new Error(
+        `Expected Ethereum Sepolia chain ID ${SEPOLIA_CHAIN_ID}, but RPC returned chain ID ${chainId}`
+      );
+    }
+
+    let balance: bigint;
+
+    try {
+      balance = await this.provider.getBalance(this.walletAddress);
+    } catch (error: unknown) {
+      throw new Error(
+        `Could not check deployment wallet balance: ${
+          error instanceof Error ? error.message : "Unknown RPC error"
+        }`
+      );
+    }
+
+    if (balance === 0n) {
+      throw new Error("Deployment wallet needs Sepolia ETH for gas.");
+    }
+  }
+
   public async issueCertificateOnChain(
     certificateId: string,
     certificateHash: string
   ): Promise<BlockchainIssueResult> {
+    await this.assertSepoliaWalletReady();
+
     const transaction = await this.contract.issueCertificate(
       certificateId,
       certificateHashHexToBytes32(certificateHash)
@@ -101,6 +148,8 @@ export class BlockchainService {
   }
 
   public async revokeCertificateOnChain(certificateId: string): Promise<BlockchainIssueResult> {
+    await this.assertSepoliaWalletReady();
+
     const transaction = await this.contract.revokeCertificate(certificateId);
     const receipt = await waitForReceipt(transaction);
 

@@ -24,7 +24,7 @@ const mapCertificateDetail = (response: CertificateDetailResponse): CertificateD
   issueDate: response.certificate.issueDate,
   expirationDate: response.certificate.expiryDate ?? 'No expiry',
   status: response.certificate.status,
-  blockchainVerified: Boolean(response.certificate.blockchain),
+  blockchainVerified: response.certificate.blockchain?.verificationStatus === 'Verified',
   title: response.certificate.design?.certificateTitle || 'Certificate of Completion',
   issuer: response.certificate.organization.name,
   organizationLogo: response.certificate.design?.organizationLogo,
@@ -33,8 +33,11 @@ const mapCertificateDetail = (response: CertificateDetailResponse): CertificateD
     network: response.certificate.blockchain?.network ?? 'Not anchored',
     transactionHash: response.certificate.blockchain?.transactionHash ?? '',
     blockNumber: response.certificate.blockchain?.blockNumber ?? 0,
+    contractAddress: response.certificate.blockchain?.contractAddress ?? null,
     certificateHash: response.certificate.blockchain?.certificateHash ?? '',
-    verified: Boolean(response.certificate.blockchain),
+    verificationStatus: response.certificate.blockchain?.verificationStatus ?? 'Not available',
+    verified: response.certificate.blockchain?.verificationStatus === 'Verified',
+    message: response.certificate.blockchain?.message,
   },
 })
 
